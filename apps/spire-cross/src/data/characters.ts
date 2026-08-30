@@ -1,0 +1,171 @@
+import { CharacterDef, Rarity } from '../types';
+
+export const RARITY_ORDER: Rarity[] = ['N', 'R', 'SR', 'SSR'];
+
+export const RARITY_COLOR: Record<Rarity, string> = {
+  N: '#8a8f98',
+  R: '#3f8efc',
+  SR: '#b164e8',
+  SSR: '#f5b400',
+};
+
+export const RARITY_LABEL: Record<Rarity, string> = {
+  N: 'N',
+  R: 'R',
+  SR: 'SR',
+  SSR: 'SSR',
+};
+
+export const CHARACTERS: CharacterDef[] = [
+  {
+    id: 'apprentice_warrior',
+    name: '見習い戦士',
+    title: '駆け出しの剣',
+    rarity: 'N',
+    element: '火',
+    color: '#e2725b',
+    emoji: '🗡️',
+    bonusHp: 5,
+    cardIds: ['apprentice_warrior_atk', 'apprentice_warrior_skl'],
+  },
+  {
+    id: 'forest_archer',
+    name: '森の弓兵',
+    title: '風読みの矢',
+    rarity: 'N',
+    element: '風',
+    color: '#5fae6b',
+    emoji: '🏹',
+    bonusHp: 5,
+    cardIds: ['forest_archer_atk', 'forest_archer_skl'],
+  },
+  {
+    id: 'village_healer',
+    name: '村の治療師',
+    title: '灯火の祈り',
+    rarity: 'N',
+    element: '光',
+    color: '#f2d06b',
+    emoji: '💊',
+    bonusHp: 6,
+    cardIds: ['village_healer_atk', 'village_healer_skl'],
+  },
+  {
+    id: 'shield_recruit',
+    name: '盾持ちの新兵',
+    title: '土の守り',
+    rarity: 'N',
+    element: '土',
+    color: '#a68a64',
+    emoji: '🛡️',
+    bonusHp: 8,
+    cardIds: ['shield_recruit_atk', 'shield_recruit_skl'],
+  },
+  {
+    id: 'lightning_swordsman',
+    name: '稲妻の剣士',
+    title: '雷鳴一閃',
+    rarity: 'R',
+    element: '雷',
+    color: '#e8c93f',
+    emoji: '⚡',
+    bonusHp: 10,
+    cardIds: ['lightning_swordsman_atk', 'lightning_swordsman_skl'],
+  },
+  {
+    id: 'frost_mage',
+    name: '氷結の魔術師',
+    title: '静寂の氷',
+    rarity: 'R',
+    element: '水',
+    color: '#5bc0e8',
+    emoji: '❄️',
+    bonusHp: 9,
+    cardIds: ['frost_mage_atk', 'frost_mage_skl'],
+  },
+  {
+    id: 'shadow_rogue',
+    name: '影渡りの盗賊',
+    title: '闇に潜む刃',
+    rarity: 'R',
+    element: '闇',
+    color: '#6a5b8a',
+    emoji: '🗡️',
+    bonusHp: 8,
+    cardIds: ['shadow_rogue_atk', 'shadow_rogue_skl'],
+  },
+  {
+    id: 'paladin_trainee',
+    name: '聖騎士見習い',
+    title: '誓いの盾',
+    rarity: 'R',
+    element: '光',
+    color: '#f2e6a0',
+    emoji: '⚔️',
+    bonusHp: 12,
+    cardIds: ['paladin_trainee_atk', 'paladin_trainee_skl'],
+  },
+  {
+    id: 'crimson_blade_saint',
+    name: '紅蓮の剣聖',
+    title: '業火を纏う剣',
+    rarity: 'SR',
+    element: '火',
+    color: '#e8452f',
+    emoji: '🔥',
+    bonusHp: 18,
+    cardIds: ['crimson_blade_saint_atk', 'crimson_blade_saint_pow'],
+  },
+  {
+    id: 'abyss_witch',
+    name: '深淵の魔女',
+    title: '深き闇の詠唱',
+    rarity: 'SR',
+    element: '闇',
+    color: '#4a3466',
+    emoji: '🔮',
+    bonusHp: 16,
+    cardIds: ['abyss_witch_atk', 'abyss_witch_pow'],
+  },
+  {
+    id: 'sky_hunter',
+    name: '天空の狩人',
+    title: '疾風迅雷',
+    rarity: 'SR',
+    element: '風',
+    color: '#4fb0a5',
+    emoji: '🦅',
+    bonusHp: 17,
+    cardIds: ['sky_hunter_atk', 'sky_hunter_pow'],
+  },
+  {
+    id: 'star_guiding_goddess',
+    name: '星導の女神',
+    title: '導きの光輝',
+    rarity: 'SSR',
+    element: '光',
+    color: '#ffd76a',
+    emoji: '✨',
+    bonusHp: 30,
+    cardIds: ['star_guiding_goddess_atk', 'star_guiding_goddess_pow'],
+  },
+  {
+    id: 'doom_dragoon',
+    name: '終焉の竜騎士',
+    title: '滅びを穿つ槍',
+    rarity: 'SSR',
+    element: '闇',
+    color: '#7a1f3d',
+    emoji: '🐉',
+    bonusHp: 32,
+    cardIds: ['doom_dragoon_atk', 'doom_dragoon_pow'],
+  },
+];
+
+export const CHARACTER_MAP: Record<string, CharacterDef> = Object.fromEntries(
+  CHARACTERS.map((c) => [c.id, c])
+);
+
+export function getCharacter(id: string): CharacterDef | undefined {
+  return CHARACTER_MAP[id];
+}
