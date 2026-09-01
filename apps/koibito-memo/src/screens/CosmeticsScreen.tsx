@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, View, Pressable, Text, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CosmeticItem } from '../types';
@@ -7,7 +7,9 @@ import { makeId, useStoredList } from '../storage/useStoredList';
 import { Chip, COLORS, EmptyState, ScreenTitle, TextField } from '../components/ui';
 import ItemCard from '../components/ItemCard';
 import FormModal from '../components/FormModal';
+import PhotoField from '../components/PhotoField';
 import { addDays, formatJP, todayISO } from '../utils/date';
+import { syncCosmeticNotifications } from '../notifications/scheduler';
 
 const CATEGORIES = ['スキンケア', 'メイク', 'ヘアケア', 'ボディケア', 'その他'];
 
@@ -18,6 +20,7 @@ const EMPTY: Omit<CosmeticItem, 'id'> = {
   expiryMonths: '',
   repurchase: false,
   note: '',
+  photoUri: '',
 };
 
 function expiryInfo(item: CosmeticItem): { text: string; warn: boolean } | null {
@@ -40,6 +43,10 @@ export default function CosmeticsScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<CosmeticItem, 'id'>>(EMPTY);
 
+  useEffect(() => {
+    syncCosmeticNotifications(items);
+  }, [items]);
+
   const openAdd = () => {
     setEditingId(null);
     setForm(EMPTY);
@@ -55,6 +62,7 @@ export default function CosmeticsScreen() {
       expiryMonths: item.expiryMonths,
       repurchase: item.repurchase,
       note: item.note,
+      photoUri: item.photoUri,
     });
     setModalVisible(true);
   };
@@ -100,6 +108,7 @@ export default function CosmeticsScreen() {
                 detail={`${info?.text ?? ''}${item.note ? `\n${item.note}` : ''}`}
                 badge={info?.warn ? '要注意' : undefined}
                 badgeColor={COLORS.danger}
+                photoUri={item.photoUri}
                 onEdit={() => openEdit(item)}
                 onDelete={() =>
                   Alert.alert('削除確認', `「${item.name}」を削除しますか?`, [
@@ -165,6 +174,7 @@ export default function CosmeticsScreen() {
           placeholder="使用感など"
           multiline
         />
+        <PhotoField uri={form.photoUri} onChange={(v) => setForm((f) => ({ ...f, photoUri: v }))} />
       </FormModal>
     </SafeAreaView>
   );

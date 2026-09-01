@@ -20,6 +20,21 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#e8607f"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "恋人メモが写真を添付するには、写真ライブラリへのアクセスを許可してください。"
+        }
+      ]
+    ]
   }
 }

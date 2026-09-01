@@ -7,6 +7,7 @@ import { makeId, useStoredList } from '../storage/useStoredList';
 import { Chip, COLORS, EmptyState, ScreenTitle, TextField } from '../components/ui';
 import ItemCard from '../components/ItemCard';
 import FormModal from '../components/FormModal';
+import PhotoField from '../components/PhotoField';
 import { formatJP, todayISO } from '../utils/date';
 
 const STATUS_LABEL: Record<GiftStatus, string> = {
@@ -36,6 +37,7 @@ const EMPTY: Omit<GiftEntry, 'id'> = {
   price: '',
   date: todayISO(),
   note: '',
+  photoUri: '',
 };
 
 export default function GiftScreen() {
@@ -66,6 +68,7 @@ export default function GiftScreen() {
       price: item.price,
       date: item.date,
       note: item.note,
+      photoUri: item.photoUri,
     });
     setModalVisible(true);
   };
@@ -118,6 +121,7 @@ export default function GiftScreen() {
               detail={`${item.date ? formatJP(item.date) : ''}${item.note ? ` ・ ${item.note}` : ''}`}
               badge={STATUS_LABEL[item.status]}
               badgeColor={STATUS_COLOR[item.status]}
+              photoUri={item.photoUri}
               onEdit={() => openEdit(item)}
               onDelete={() =>
                 Alert.alert('削除確認', `「${item.title}」を削除しますか?`, [
@@ -192,6 +196,7 @@ export default function GiftScreen() {
           placeholder="サイズ・色など"
           multiline
         />
+        <PhotoField uri={form.photoUri} onChange={(v) => setForm((f) => ({ ...f, photoUri: v }))} />
       </FormModal>
     </SafeAreaView>
   );

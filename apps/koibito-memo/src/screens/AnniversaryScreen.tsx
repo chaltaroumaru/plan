@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, StyleSheet, View, Pressable, Text, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Anniversary } from '../types';
@@ -7,13 +7,16 @@ import { makeId, useStoredList } from '../storage/useStoredList';
 import { COLORS, EmptyState, ScreenTitle, TextField } from '../components/ui';
 import ItemCard from '../components/ItemCard';
 import FormModal from '../components/FormModal';
+import PhotoField from '../components/PhotoField';
 import { daysUntilNext, formatJP, todayISO, yearsSince } from '../utils/date';
+import { syncAnniversaryNotifications } from '../notifications/scheduler';
 
 const EMPTY: Omit<Anniversary, 'id'> = {
   title: '',
   date: todayISO(),
   repeatYearly: true,
   note: '',
+  photoUri: '',
 };
 
 export default function AnniversaryScreen() {
@@ -32,6 +35,10 @@ export default function AnniversaryScreen() {
     });
   }, [items]);
 
+  useEffect(() => {
+    syncAnniversaryNotifications(items);
+  }, [items]);
+
   const openAdd = () => {
     setEditingId(null);
     setForm(EMPTY);
@@ -45,6 +52,7 @@ export default function AnniversaryScreen() {
       date: item.date,
       repeatYearly: item.repeatYearly,
       note: item.note,
+      photoUri: item.photoUri,
     });
     setModalVisible(true);
   };
@@ -111,6 +119,7 @@ export default function AnniversaryScreen() {
                 detail={item.note}
                 badge={badge}
                 badgeColor={badgeColor}
+                photoUri={item.photoUri}
                 onEdit={() => openEdit(item)}
                 onDelete={() =>
                   Alert.alert('削除確認', `「${item.title}」を削除しますか?`, [
@@ -158,6 +167,7 @@ export default function AnniversaryScreen() {
           placeholder="任意メモ"
           multiline
         />
+        <PhotoField uri={form.photoUri} onChange={(v) => setForm((f) => ({ ...f, photoUri: v }))} />
       </FormModal>
     </SafeAreaView>
   );

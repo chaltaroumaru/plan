@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, StyleSheet, View, Pressable, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PeriodLog } from '../types';
@@ -8,6 +8,7 @@ import { COLORS, EmptyState, ScreenTitle, TextField } from '../components/ui';
 import ItemCard from '../components/ItemCard';
 import FormModal from '../components/FormModal';
 import { addDays, averageCycleLength, daysBetween, formatJP, parseISODate, todayISO } from '../utils/date';
+import { syncPeriodNotification } from '../notifications/scheduler';
 
 const DEFAULT_CYCLE = 28;
 
@@ -26,6 +27,10 @@ export default function PeriodScreen() {
     [items]
   );
   const sortedAsc = useMemo(() => [...sortedDesc].reverse(), [sortedDesc]);
+
+  useEffect(() => {
+    syncPeriodNotification(items);
+  }, [items]);
 
   const cycleLength = averageCycleLength(sortedAsc.map((p) => p.startDate)) ?? DEFAULT_CYCLE;
   const lastStart = sortedDesc[0]?.startDate ?? null;

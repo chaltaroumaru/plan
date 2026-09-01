@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { COLORS } from './ui';
 
 export default function ItemCard({
@@ -8,6 +8,7 @@ export default function ItemCard({
   detail,
   badge,
   badgeColor,
+  photoUri,
   onEdit,
   onDelete,
 }: {
@@ -16,28 +17,32 @@ export default function ItemCard({
   detail?: string;
   badge?: string;
   badgeColor?: string;
+  photoUri?: string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   return (
     <View style={styles.card}>
       <Pressable style={styles.mainArea} onPress={onEdit}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-          {badge ? (
-            <View style={[styles.badge, { backgroundColor: badgeColor ?? COLORS.accent }]}>
-              <Text style={styles.badgeText}>{badge}</Text>
-            </View>
+        {photoUri ? <Image source={{ uri: photoUri }} style={styles.thumb} /> : null}
+        <View style={styles.textCol}>
+          <View style={styles.headerRow}>
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+            {badge ? (
+              <View style={[styles.badge, { backgroundColor: badgeColor ?? COLORS.accent }]}>
+                <Text style={styles.badgeText}>{badge}</Text>
+              </View>
+            ) : null}
+          </View>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          {detail ? (
+            <Text style={styles.detail} numberOfLines={2}>
+              {detail}
+            </Text>
           ) : null}
         </View>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-        {detail ? (
-          <Text style={styles.detail} numberOfLines={2}>
-            {detail}
-          </Text>
-        ) : null}
       </Pressable>
       <View style={styles.actions}>
         <Pressable style={styles.actionBtn} onPress={onEdit}>
@@ -61,7 +66,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     overflow: 'hidden',
   },
-  mainArea: { flex: 1, padding: 14 },
+  mainArea: { flex: 1, flexDirection: 'row', padding: 14 },
+  thumb: { width: 44, height: 44, borderRadius: 10, marginRight: 10, backgroundColor: '#fff' },
+  textCol: { flex: 1 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 15, fontWeight: '700', color: COLORS.text, flexShrink: 1 },
   subtitle: { fontSize: 12, color: COLORS.primaryDark, marginTop: 3, fontWeight: '600' },

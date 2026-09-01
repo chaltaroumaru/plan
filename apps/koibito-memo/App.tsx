@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
@@ -11,6 +11,7 @@ import GiftScreen from './src/screens/GiftScreen';
 import CosmeticsScreen from './src/screens/CosmeticsScreen';
 import LikesScreen from './src/screens/LikesScreen';
 import PeriodScreen from './src/screens/PeriodScreen';
+import { requestNotificationPermission } from './src/notifications/scheduler';
 
 const Tab = createBottomTabNavigator();
 
@@ -45,6 +46,10 @@ const TAB_LABEL: Record<string, string> = {
 };
 
 export default function App() {
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={theme}>

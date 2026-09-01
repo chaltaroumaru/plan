@@ -4,6 +4,7 @@ export interface Anniversary {
   date: string; // ISO yyyy-mm-dd
   repeatYearly: boolean;
   note: string;
+  photoUri: string; // data URI or local file URI, optional
 }
 
 export type GiftStatus = 'idea' | 'planned' | 'given' | 'received';
@@ -18,6 +19,7 @@ export interface GiftEntry {
   price: string;
   date: string; // ISO yyyy-mm-dd, optional
   note: string;
+  photoUri: string; // data URI or local file URI, optional
 }
 
 export interface CosmeticItem {
@@ -28,6 +30,7 @@ export interface CosmeticItem {
   expiryMonths: string; // number of months as string for form binding
   repurchase: boolean;
   note: string;
+  photoUri: string; // data URI or local file URI, optional
 }
 
 export interface LikeItem {
