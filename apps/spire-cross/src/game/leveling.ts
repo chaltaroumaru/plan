@@ -7,7 +7,7 @@ export function expForNextLevel(level: number): number {
 }
 
 export function createInitialProgress(): CharacterProgress {
-  return { level: 1, exp: 0, skillPoints: 0, allocatedNodeIds: [] };
+  return { level: 1, exp: 0, skillPoints: 0, allocatedNodeIds: [], awakened: false };
 }
 
 export function grantExp(progress: CharacterProgress, expGained: number): CharacterProgress {

@@ -48,9 +48,9 @@ export interface EnemyDef {
   isElite?: boolean;
 }
 
-export type MaterialType = 'enhance' | 'evolve' | 'unlock';
+export type MaterialType = 'enhance' | 'evolve' | 'unlock' | 'memory';
 
-export type DungeonCategory = 'enhance' | 'evolve' | 'unlock' | 'raid' | 'event';
+export type DungeonCategory = 'enhance' | 'evolve' | 'unlock' | 'memory' | 'raid' | 'event';
 
 export interface DungeonStageDef {
   id: string;
@@ -102,6 +102,8 @@ export interface CharacterProgress {
   exp: number;
   skillPoints: number;
   allocatedNodeIds: string[];
+  /** 記憶のかけらを集め、失った大切な人の記憶と向き合って解放される覚醒フラグ */
+  awakened: boolean;
 }
 
 export interface ApState {
@@ -150,6 +152,7 @@ export interface BattleCharacterState {
   ultimateCooldownLeft: number;
   ultimateMaxCooldown: number;
   alive: boolean;
+  awakened: boolean;
 }
 
 export interface BattleEnemyState {

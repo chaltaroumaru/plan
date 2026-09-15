@@ -87,6 +87,7 @@ export function createBattleCharacter(character: CharacterDef, progress: Charact
     ultimateCooldownLeft: stats.ultimateMaxCooldown,
     ultimateMaxCooldown: stats.ultimateMaxCooldown,
     alive: true,
+    awakened: progress.awakened,
   };
 }
 

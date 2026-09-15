@@ -11,7 +11,7 @@ import { consumeAp, minutesUntilNextAp, recoverAp } from '../game/ap';
 import Bar from '../components/Bar';
 import BattleView from './BattleView';
 
-const CATEGORIES: DungeonCategory[] = ['enhance', 'evolve', 'unlock', 'raid', 'event'];
+const CATEGORIES: DungeonCategory[] = ['enhance', 'evolve', 'unlock', 'memory', 'raid', 'event'];
 
 export default function DungeonScreen() {
   const { profile, updateProfile } = useGame();

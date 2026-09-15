@@ -112,7 +112,7 @@ export default function CharactersScreen() {
         <View style={styles.menuRow}>
           <Pressable style={styles.menuBtnHalf} onPress={() => setMode('awakening')}>
             <Text style={styles.menuEmoji}>✨</Text>
-            <Text style={styles.menuLabel}>キャラクター覚醒(仮)</Text>
+            <Text style={styles.menuLabel}>キャラクター覚醒</Text>
           </Pressable>
           <Pressable style={styles.menuBtnHalf} onPress={() => setMode('evolution')}>
             <Text style={styles.menuEmoji}>🦋</Text>

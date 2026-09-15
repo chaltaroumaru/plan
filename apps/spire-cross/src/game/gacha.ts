@@ -2,8 +2,8 @@ import { CHARACTERS } from '../data/characters';
 import { CHARACTER_CARDS } from '../data/cards';
 import { GachaPoolKind, GachaPullResult, PlayerProfile, Rarity } from '../types';
 
-export const SINGLE_PULL_COST = 100;
-export const TEN_PULL_COST = 1000;
+export const SINGLE_PULL_COST = 5;
+export const TEN_PULL_COST = 50;
 export const MULTI_PULL_COUNT = 11; // 10連+1のおまけ枠
 export const PITY_LIMIT = 60;
 

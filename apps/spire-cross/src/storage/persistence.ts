@@ -12,7 +12,7 @@ function buildDefaultProfile(): PlayerProfile {
     gold: 300,
     stones: 300,
     ap: createInitialAp(),
-    materials: { enhance: 0, evolve: 0, unlock: 0 },
+    materials: { enhance: 0, evolve: 0, unlock: 0, memory: 0 },
     ownedCharacterCounts: Object.fromEntries(starterCharacterIds.map((id) => [id, 1])),
     ownedCardCounts: {
       apprentice_warrior_atk: 1,
@@ -43,7 +43,12 @@ export async function loadProfile(): Promise<PlayerProfile> {
     if (!raw) return buildDefaultProfile();
     const parsed = JSON.parse(raw);
     const defaults = buildDefaultProfile();
-    return { ...defaults, ...parsed, settings: { ...defaults.settings, ...(parsed.settings ?? {}) } };
+    return {
+      ...defaults,
+      ...parsed,
+      settings: { ...defaults.settings, ...(parsed.settings ?? {}) },
+      materials: { ...defaults.materials, ...(parsed.materials ?? {}) },
+    };
   } catch {
     return buildDefaultProfile();
   }

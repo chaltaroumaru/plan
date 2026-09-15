@@ -182,6 +182,11 @@ export default function BattleView({ stageLabel, partyMembers, deckCardIds, enem
                 disabled={!actorTappable}
                 onPress={() => handleActorTap(c.uid)}
               >
+                {c.awakened && (
+                  <View style={styles.awakenedBadge}>
+                    <Text style={styles.awakenedBadgeText}>覚醒</Text>
+                  </View>
+                )}
                 <Text style={styles.charEmoji}>{def?.emoji ?? '🧑'}</Text>
                 <Text style={styles.charName} numberOfLines={1}>
                   {def?.name ?? ''}
@@ -339,6 +344,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
+  awakenedBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#f5b400',
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    zIndex: 1,
+  },
+  awakenedBadgeText: { color: '#1a1330', fontSize: 9, fontWeight: '800' },
   charEmoji: { fontSize: 26, textAlign: 'center' },
   charName: { color: '#fff', fontSize: 11, fontWeight: '700', marginTop: 2, textAlign: 'center' },
   ultimateBadge: {

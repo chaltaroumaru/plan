@@ -1,5 +1,6 @@
 import { SKILL_RARITY_MULT, SKILL_TREE_TEMPLATE, getSkillTreeNode } from '../data/skillTree';
 import { CharacterDef, CharacterProgress, PlayerProfile } from '../types';
+import { AWAKENING_STAT_BONUS } from './awakening';
 
 export interface EffectiveStats {
   maxHp: number;
@@ -58,6 +59,12 @@ export function computeEffectiveStats(
         break;
     }
   });
+
+  if (progress.awakened) {
+    maxHp = Math.round(maxHp * (1 + AWAKENING_STAT_BONUS));
+    atk = Math.round(atk * (1 + AWAKENING_STAT_BONUS));
+    def = Math.round(def * (1 + AWAKENING_STAT_BONUS));
+  }
 
   return {
     maxHp,
