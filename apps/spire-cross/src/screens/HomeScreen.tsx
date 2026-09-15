@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGame } from '../state/GameContext';
 import { AP_MAX } from '../data/economy';
 import { recoverAp } from '../game/ap';
+import { getCharacter, RARITY_COLOR } from '../data/characters';
 import Bar from '../components/Bar';
 
 const ANNOUNCEMENTS = [
@@ -85,6 +86,38 @@ export default function HomeScreen({ navigation }: any) {
               )}
             </Pressable>
           </View>
+        </View>
+
+        <Text style={styles.partyLabel}>パーティー</Text>
+        <View style={styles.partyRow}>
+          {profile.partyIds.length === 0 ? (
+            <Pressable style={styles.partyEmptyBox} onPress={() => navigation.navigate('キャラ')}>
+              <Text style={styles.partyEmptyText}>パーティが未編成です{'\n'}タップして編成する</Text>
+            </Pressable>
+          ) : (
+            profile.partyIds.map((id) => {
+              const character = getCharacter(id);
+              const level = profile.characterProgress[id]?.level ?? 1;
+              if (!character) return null;
+              return (
+                <Pressable
+                  key={id}
+                  style={styles.partyMember}
+                  onPress={() => navigation.navigate('キャラ')}
+                >
+                  <View style={[styles.partyAvatar, { borderColor: RARITY_COLOR[character.rarity] }]}>
+                    <Text style={styles.partyEmoji}>{character.emoji}</Text>
+                    <View style={[styles.partyLevelBadge, { backgroundColor: RARITY_COLOR[character.rarity] }]}>
+                      <Text style={styles.partyLevelText}>Lv{level}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.partyName} numberOfLines={1}>
+                    {character.name}
+                  </Text>
+                </Pressable>
+              );
+            })
+          )}
         </View>
 
         <View style={styles.navGrid}>
@@ -214,7 +247,52 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: '#1b1040', fontSize: 9, fontWeight: '800' },
   sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 8, marginBottom: 8 },
-  navGrid: { marginTop: 8, gap: 20 },
+  partyLabel: {
+    color: '#c9b8ff',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 12,
+    marginBottom: 12,
+    letterSpacing: 2,
+  },
+  partyRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: 22,
+    minHeight: 128,
+  },
+  partyMember: { alignItems: 'center', width: 96 },
+  partyAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(20,14,42,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+  },
+  partyEmoji: { fontSize: 44 },
+  partyLevelBadge: {
+    position: 'absolute',
+    bottom: -6,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  partyLevelText: { color: '#1b1040', fontSize: 11, fontWeight: '800' },
+  partyName: { color: '#fff', fontSize: 12, fontWeight: '700', marginTop: 10, textAlign: 'center' },
+  partyEmptyBox: {
+    backgroundColor: 'rgba(30,20,58,0.78)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(124,92,255,0.35)',
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+  },
+  partyEmptyText: { color: '#c4c4d4', fontSize: 13, textAlign: 'center', lineHeight: 20 },
+  navGrid: { marginTop: 48, gap: 20 },
   navRow: { flexDirection: 'row', justifyContent: 'center', gap: 20 },
   navItem: { alignItems: 'center', width: 92 },
   navCircle: {

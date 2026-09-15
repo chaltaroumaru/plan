@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 
 // react-native-screens は web では screensEnabled() が既定で false になり、
@@ -40,6 +40,44 @@ const TAB_ICON: Record<string, string> = {
   設定: '⚙️',
 };
 
+const TAB_BAR_CONTENT_HEIGHT = 78;
+
+function AppNavigator() {
+  // 端末のジェスチャーバー/ナビゲーションボタン分の余白(bottom inset)を
+  // タブバーの高さに足すことで、OSのナビゲーションUIと重ならないようにする。
+  const insets = useSafeAreaInsets();
+
+  return (
+    <NavigationContainer theme={theme}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarActiveTintColor: THEME.gold,
+          tabBarInactiveTintColor: '#8a80b0',
+          tabBarStyle: {
+            backgroundColor: 'rgba(15,11,32,0.95)',
+            borderTopColor: 'rgba(124,92,255,0.25)',
+            height: TAB_BAR_CONTENT_HEIGHT + insets.bottom,
+            paddingTop: 10,
+            paddingBottom: insets.bottom,
+          },
+          tabBarIcon: () => <Text style={{ fontSize: 30 }}>{TAB_ICON[route.name] ?? ''}</Text>,
+          tabBarLabel: route.name,
+          tabBarLabelStyle: { fontSize: 13, fontWeight: '700' },
+          tabBarItemStyle: { paddingVertical: 4 },
+        })}
+      >
+        <Tab.Screen name="ホーム" component={HomeScreen} />
+        <Tab.Screen name="ダンジョン" component={DungeonScreen} />
+        <Tab.Screen name="ストーリー" component={StoryScreen} />
+        <Tab.Screen name="キャラ" component={CharactersScreen} />
+        <Tab.Screen name="ガチャ" component={GachaScreen} />
+        <Tab.Screen name="設定" component={SettingsScreen} />
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+}
+
 export default function App() {
   return (
     <View style={styles.outer}>
@@ -47,32 +85,7 @@ export default function App() {
         <AppBackground />
         <SafeAreaProvider>
           <GameProvider>
-            <NavigationContainer theme={theme}>
-              <Tab.Navigator
-                screenOptions={({ route }) => ({
-                  headerShown: false,
-                  tabBarActiveTintColor: THEME.gold,
-                  tabBarInactiveTintColor: '#8a80b0',
-                  tabBarStyle: {
-                    backgroundColor: 'rgba(15,11,32,0.92)',
-                    borderTopColor: 'rgba(124,92,255,0.25)',
-                    height: 72,
-                    paddingTop: 8,
-                  },
-                  tabBarIcon: () => <Text style={{ fontSize: 24 }}>{TAB_ICON[route.name] ?? ''}</Text>,
-                  tabBarLabel: route.name,
-                  tabBarLabelStyle: { fontSize: 12, fontWeight: '700' },
-                  tabBarItemStyle: { paddingVertical: 4 },
-                })}
-              >
-                <Tab.Screen name="ホーム" component={HomeScreen} />
-                <Tab.Screen name="ダンジョン" component={DungeonScreen} />
-                <Tab.Screen name="ストーリー" component={StoryScreen} />
-                <Tab.Screen name="キャラ" component={CharactersScreen} />
-                <Tab.Screen name="ガチャ" component={GachaScreen} />
-                <Tab.Screen name="設定" component={SettingsScreen} />
-              </Tab.Navigator>
-            </NavigationContainer>
+            <AppNavigator />
             <StatusBar style="light" />
           </GameProvider>
         </SafeAreaProvider>
