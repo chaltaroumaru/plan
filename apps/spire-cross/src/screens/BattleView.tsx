@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
-import { BattleState, EnemyDef } from '../types';
+import { BattleCardInstance, BattlePartyState, CharacterDef, CharacterProgress, EnemyDef } from '../types';
 import { getCard } from '../data/cards';
-import { createBattleState, endTurn, playCard } from '../game/battleEngine';
+import { getCharacter } from '../data/characters';
+import { createBattleState, endTurn, playCard, useUltimate } from '../game/battleEngine';
 import Bar from '../components/Bar';
 import CardView from '../components/CardView';
 
 interface Props {
-  enemy: EnemyDef;
-  deck: string[];
-  playerHp: number;
-  playerMaxHp: number;
-  strength: number;
-  onFinished: (result: { won: boolean; hp: number; strength: number }) => void;
+  partyMembers: { character: CharacterDef; progress: CharacterProgress }[];
+  deckCardIds: string[];
+  enemyDefs: EnemyDef[];
+  onFinished: (result: { won: boolean }) => void;
 }
 
 const INTENT_LABEL: Record<string, string> = {
@@ -21,37 +20,104 @@ const INTENT_LABEL: Record<string, string> = {
   buff: '💪 強化',
 };
 
-export default function BattleView({ enemy, deck, playerHp, playerMaxHp, strength, onFinished }: Props) {
-  const [state, setState] = useState<BattleState>(() =>
-    createBattleState(enemy, deck, playerHp, playerMaxHp, strength)
-  );
+type PendingMode = 'none' | 'pick-actor' | 'pick-target' | 'pick-ultimate-target';
 
-  const handlePlay = (uid: string) => {
-    setState((prev) => playCard(prev, uid, enemy.name));
+export default function BattleView({ partyMembers, deckCardIds, enemyDefs, onFinished }: Props) {
+  const enemyDefMap = Object.fromEntries(enemyDefs.map((e) => [e.id, e]));
+  const [state, setState] = useState<BattlePartyState>(() =>
+    createBattleState(partyMembers, deckCardIds, enemyDefs)
+  );
+  const [pendingCard, setPendingCard] = useState<BattleCardInstance | null>(null);
+  const [pendingActorUid, setPendingActorUid] = useState<string | null>(null);
+  const [pendingUltimateActorUid, setPendingUltimateActorUid] = useState<string | null>(null);
+
+  const mode: PendingMode = pendingUltimateActorUid
+    ? 'pick-ultimate-target'
+    : pendingCard && !pendingActorUid
+      ? 'pick-actor'
+      : pendingCard && pendingActorUid
+        ? 'pick-target'
+        : 'none';
+
+  const resetPending = () => {
+    setPendingCard(null);
+    setPendingActorUid(null);
+    setPendingUltimateActorUid(null);
+  };
+
+  const handleCardTap = (inst: BattleCardInstance) => {
+    if (state.isOver) return;
+    const card = getCard(inst.cardId);
+    if (state.energy < card.cost) return;
+    resetPending();
+    setPendingCard(inst);
+  };
+
+  const handleActorTap = (uid: string) => {
+    if (!pendingCard) return;
+    const card = getCard(pendingCard.cardId);
+    if (card.type === 'attack') {
+      setPendingActorUid(uid);
+    } else {
+      setState((prev) => playCard(prev, pendingCard.uid, uid));
+      resetPending();
+    }
+  };
+
+  const handleEnemyTap = (enemyUid: string) => {
+    if (pendingUltimateActorUid) {
+      setState((prev) => useUltimate(prev, pendingUltimateActorUid, enemyUid));
+      resetPending();
+      return;
+    }
+    if (pendingCard && pendingActorUid) {
+      setState((prev) => playCard(prev, pendingCard.uid, pendingActorUid, enemyUid));
+      resetPending();
+    }
+  };
+
+  const handleUltimateTap = (uid: string) => {
+    resetPending();
+    setPendingUltimateActorUid(uid);
   };
 
   const handleEndTurn = () => {
-    setState((prev) => endTurn(prev, enemy));
+    resetPending();
+    setState((prev) => endTurn(prev, enemyDefMap));
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.enemyBox}>
-        <Text style={styles.enemyEmoji}>{enemy.emoji}</Text>
-        <Text style={styles.enemyName}>
-          {enemy.name} {enemy.isElite ? '(エリート)' : enemy.isBoss ? '(ボス)' : ''}
-        </Text>
-        <Bar value={state.enemyHp} max={state.enemyMaxHp} color="#e8452f" height={16} />
-        <Text style={styles.hpText}>
-          HP {state.enemyHp}/{state.enemyMaxHp} {state.enemyBlock > 0 ? `🛡️${state.enemyBlock}` : ''}
-        </Text>
-        <View style={styles.intentBox}>
-          <Text style={styles.intentText}>
-            次の行動: {INTENT_LABEL[state.enemyIntent.kind]}
-            {state.enemyIntent.kind === 'attack' ? ` ${state.enemyIntent.value}` : ''}
-          </Text>
-        </View>
-      </View>
+      <ScrollView contentContainerStyle={styles.enemyRow} horizontal showsHorizontalScrollIndicator={false}>
+        {state.enemies.map((enemy, idx) => {
+          const def = enemyDefMap[enemy.enemyId];
+          const targetable = (mode === 'pick-target' || mode === 'pick-ultimate-target') && enemy.alive;
+          return (
+            <Pressable
+              key={enemy.uid}
+              testID={`enemy-slot-${idx}`}
+              style={[styles.enemyBox, targetable && styles.targetable, !enemy.alive && styles.dead]}
+              disabled={!targetable}
+              onPress={() => handleEnemyTap(enemy.uid)}
+            >
+              <Text style={styles.enemyEmoji}>{def?.emoji ?? '👾'}</Text>
+              <Text style={styles.enemyName} numberOfLines={1}>
+                {def?.name ?? '敵'}
+              </Text>
+              <Bar value={enemy.hp} max={enemy.maxHp} color="#e8452f" height={10} />
+              <Text style={styles.hpText}>
+                {enemy.hp}/{enemy.maxHp} {enemy.block > 0 ? `🛡️${enemy.block}` : ''}
+              </Text>
+              {enemy.alive && (
+                <Text style={styles.intentText}>
+                  {INTENT_LABEL[enemy.intent.kind]}
+                  {enemy.intent.kind === 'attack' ? ` ${enemy.intent.value}` : ''}
+                </Text>
+              )}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       <ScrollView style={styles.logBox} contentContainerStyle={{ padding: 8 }}>
         {state.log.slice(-6).map((line, i) => (
@@ -61,32 +127,74 @@ export default function BattleView({ enemy, deck, playerHp, playerMaxHp, strengt
         ))}
       </ScrollView>
 
-      <View style={styles.playerBox}>
-        <View style={styles.playerStatsRow}>
-          <Text style={styles.playerStat}>
-            ❤️ {state.playerHp}/{state.playerMaxHp}
+      {mode !== 'none' && (
+        <View style={styles.promptBox}>
+          <Text style={styles.promptText}>
+            {mode === 'pick-actor' && 'このカードを使うキャラを選んでください'}
+            {mode === 'pick-target' && '対象の敵を選んでください'}
+            {mode === 'pick-ultimate-target' && '必殺技の対象を選んでください'}
           </Text>
-          <Text style={styles.playerStat}>🛡️ {state.playerBlock}</Text>
-          <Text style={styles.playerStat}>💪 {state.strength}</Text>
-          <Text style={styles.playerStat}>
-            ⚡ {state.energy}/{state.maxEnergy}
-          </Text>
+          <Pressable onPress={resetPending}>
+            <Text style={styles.cancelText}>キャンセル</Text>
+          </Pressable>
         </View>
-        <Bar value={state.playerHp} max={state.playerMaxHp} color="#5fae6b" height={14} />
-        <Text style={styles.pileText}>
-          山札 {state.drawPile.length} ・ 捨札 {state.discardPile.length} ・ ターン {state.turn}
-        </Text>
-      </View>
+      )}
+
+      <ScrollView contentContainerStyle={styles.partyRow} horizontal showsHorizontalScrollIndicator={false}>
+        {state.characters.map((c, idx) => {
+          const def = getCharacter(c.characterId);
+          const actorTappable = mode === 'pick-actor' && c.alive;
+          return (
+            <View
+              key={c.uid}
+              style={[styles.charBox, actorTappable && styles.targetable, !c.alive && styles.dead]}
+            >
+              <Pressable
+                testID={`actor-slot-${idx}`}
+                disabled={!actorTappable}
+                onPress={() => handleActorTap(c.uid)}
+              >
+                <Text style={styles.charEmoji}>{def?.emoji ?? '🧑'}</Text>
+                <Text style={styles.charName} numberOfLines={1}>
+                  {def?.name ?? ''}
+                </Text>
+                <Bar value={c.hp} max={c.maxHp} color="#5fae6b" height={9} />
+                <Text style={styles.hpText}>
+                  {c.hp}/{c.maxHp} {c.block > 0 ? `🛡️${c.block}` : ''}
+                </Text>
+              </Pressable>
+              {c.ultimateAvailable && (
+                <Pressable
+                  disabled={!c.ultimateReady || mode !== 'none'}
+                  onPress={() => handleUltimateTap(c.uid)}
+                  style={[styles.ultimateBadge, c.ultimateReady && styles.ultimateReady]}
+                >
+                  <Text style={styles.ultimateText}>
+                    {c.ultimateReady ? '必殺技!' : `必殺${c.ultimateCooldownLeft}`}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          );
+        })}
+      </ScrollView>
+
+      <Text style={styles.energyText}>
+        ⚡ {state.energy}/{state.maxEnergy} ・ 山札{state.drawPile.length} ・ 捨札{state.discardPile.length} ・
+        ターン{state.turn}
+      </Text>
 
       <ScrollView horizontal contentContainerStyle={styles.hand} showsHorizontalScrollIndicator={false}>
-        {state.hand.map((inst) => {
+        {state.hand.map((inst, idx) => {
           const card = getCard(inst.cardId);
           return (
             <CardView
               key={inst.uid}
+              testID={`hand-card-${idx}`}
               card={card}
               disabled={state.energy < card.cost || state.isOver}
-              onPress={() => handlePlay(inst.uid)}
+              selected={pendingCard?.uid === inst.uid}
+              onPress={() => handleCardTap(inst)}
             />
           );
         })}
@@ -99,10 +207,7 @@ export default function BattleView({ enemy, deck, playerHp, playerMaxHp, strengt
       {state.isOver && (
         <View style={styles.overlay}>
           <Text style={styles.overlayTitle}>{state.didWin ? '🎉 勝利!' : '💀 敗北…'}</Text>
-          <Pressable
-            style={styles.overlayBtn}
-            onPress={() => onFinished({ won: state.didWin, hp: state.playerHp, strength: state.strength })}
-          >
+          <Pressable style={styles.overlayBtn} onPress={() => onFinished({ won: state.didWin })}>
             <Text style={styles.overlayBtnText}>続ける</Text>
           </Pressable>
         </View>
@@ -112,20 +217,61 @@ export default function BattleView({ enemy, deck, playerHp, playerMaxHp, strengt
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121a', padding: 12 },
-  enemyBox: { alignItems: 'center', marginBottom: 8 },
-  enemyEmoji: { fontSize: 44 },
-  enemyName: { color: '#fff', fontWeight: '700', fontSize: 15, marginTop: 2 },
-  hpText: { color: '#c4c4d4', fontSize: 12, marginTop: 2 },
-  intentBox: { backgroundColor: '#20202c', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, marginTop: 6 },
-  intentText: { color: '#f2d06b', fontSize: 12, fontWeight: '700' },
-  logBox: { maxHeight: 76, backgroundColor: '#1c1c26', borderRadius: 8, marginBottom: 8 },
+  container: { flex: 1, backgroundColor: '#12121a', padding: 10 },
+  enemyRow: { paddingVertical: 4 },
+  enemyBox: {
+    width: 100,
+    backgroundColor: '#1c1c26',
+    borderRadius: 10,
+    padding: 8,
+    marginRight: 8,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  targetable: { borderColor: '#f5b400' },
+  dead: { opacity: 0.25 },
+  enemyEmoji: { fontSize: 30 },
+  enemyName: { color: '#fff', fontSize: 11, fontWeight: '700', marginTop: 2 },
+  hpText: { color: '#c4c4d4', fontSize: 10, marginTop: 2 },
+  intentText: { color: '#f2d06b', fontSize: 10, fontWeight: '700', marginTop: 2 },
+  logBox: { maxHeight: 60, backgroundColor: '#1c1c26', borderRadius: 8, marginVertical: 6 },
   logLine: { color: '#9a9ab0', fontSize: 11, marginBottom: 2 },
-  playerBox: { marginBottom: 4 },
-  playerStatsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  playerStat: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  pileText: { color: '#9a9ab0', fontSize: 11, marginTop: 4 },
-  hand: { paddingVertical: 8, alignItems: 'flex-end' },
+  promptBox: {
+    backgroundColor: '#2a2a1a',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 6,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  promptText: { color: '#f5b400', fontSize: 12, fontWeight: '700', flexShrink: 1 },
+  cancelText: { color: '#e8452f', fontSize: 12, fontWeight: '700', marginLeft: 8 },
+  partyRow: { paddingVertical: 4 },
+  charBox: {
+    width: 96,
+    backgroundColor: '#1c1c26',
+    borderRadius: 10,
+    padding: 8,
+    marginRight: 8,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  charEmoji: { fontSize: 26, textAlign: 'center' },
+  charName: { color: '#fff', fontSize: 11, fontWeight: '700', marginTop: 2, textAlign: 'center' },
+  ultimateBadge: {
+    marginTop: 6,
+    backgroundColor: '#33334a',
+    borderRadius: 8,
+    paddingVertical: 3,
+    alignItems: 'center',
+  },
+  ultimateReady: { backgroundColor: '#e8452f' },
+  ultimateText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  energyText: { color: '#9a9ab0', fontSize: 11, textAlign: 'center', marginVertical: 4 },
+  hand: { paddingVertical: 4, alignItems: 'flex-end' },
   endTurnBtn: { backgroundColor: '#3f8efc', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   endTurnText: { color: '#fff', fontWeight: '800' },
   overlay: {

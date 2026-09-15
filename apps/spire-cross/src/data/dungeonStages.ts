@@ -1,0 +1,88 @@
+import { DungeonStageDef } from '../types';
+
+export const DUNGEON_STAGES: DungeonStageDef[] = [
+  {
+    id: 'enhance_1',
+    category: 'enhance',
+    name: '訓練場・初級',
+    apCost: 8,
+    enemyIds: ['slime', 'goblin'],
+    rewardGold: 30,
+    rewardMaterial: { type: 'enhance', amount: 3 },
+    rewardStones: 0,
+  },
+  {
+    id: 'enhance_2',
+    category: 'enhance',
+    name: '訓練場・中級',
+    apCost: 10,
+    enemyIds: ['goblin', 'bat', 'goblin'],
+    rewardGold: 40,
+    rewardMaterial: { type: 'enhance', amount: 5 },
+    rewardStones: 0,
+  },
+  {
+    id: 'evolve_1',
+    category: 'evolve',
+    name: '古の遺構・浅層',
+    apCost: 10,
+    enemyIds: ['orc', 'skeleton'],
+    rewardGold: 45,
+    rewardMaterial: { type: 'evolve', amount: 3 },
+    rewardStones: 0,
+  },
+  {
+    id: 'evolve_2',
+    category: 'evolve',
+    name: '古の遺構・深層',
+    apCost: 12,
+    enemyIds: ['wolf', 'orc'],
+    rewardGold: 55,
+    rewardMaterial: { type: 'evolve', amount: 5 },
+    rewardStones: 0,
+  },
+  {
+    id: 'unlock_1',
+    category: 'unlock',
+    name: '交界の祭壇・入口',
+    apCost: 12,
+    enemyIds: ['ogre'],
+    rewardGold: 60,
+    rewardMaterial: { type: 'unlock', amount: 4 },
+    rewardStones: 5,
+  },
+  {
+    id: 'unlock_2',
+    category: 'unlock',
+    name: '交界の祭壇・奥',
+    apCost: 14,
+    enemyIds: ['wraith', 'golem'],
+    rewardGold: 75,
+    rewardMaterial: { type: 'unlock', amount: 6 },
+    rewardStones: 8,
+  },
+  {
+    id: 'raid_1',
+    category: 'raid',
+    name: '降臨: 古き災厄の竜',
+    apCost: 20,
+    enemyIds: ['boss_dragon'],
+    rewardGold: 150,
+    rewardMaterial: null,
+    rewardStones: 50,
+  },
+  {
+    id: 'event_1',
+    category: 'event',
+    name: '期間限定: 境界の迷い子',
+    apCost: 15,
+    enemyIds: ['elite_witch', 'bat'],
+    rewardGold: 80,
+    rewardMaterial: null,
+    rewardStones: 20,
+  },
+];
+
+export const DUNGEON_STAGE_MAP: Record<string, DungeonStageDef> = Object.fromEntries(
+  DUNGEON_STAGES.map((s) => [s.id, s])
+);

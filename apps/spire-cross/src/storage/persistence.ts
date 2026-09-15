@@ -1,46 +1,52 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PlayerProfile, RunState } from '../types';
+import { PlayerProfile } from '../types';
+import { createInitialAp } from '../game/ap';
+import { createInitialProgress } from '../game/leveling';
+import { buildDefaultDeck } from '../game/deck';
 
-const PROFILE_KEY = 'spire-cross/profile';
-const RUN_KEY = 'spire-cross/run';
+const PROFILE_KEY = 'spire-cross/profile-v2';
 
-export const DEFAULT_PROFILE: PlayerProfile = {
-  gold: 300,
-  gems: 300,
-  ownedCharacterIds: ['apprentice_warrior', 'shield_recruit'],
-  pityCounter: 0,
-  totalPulls: 0,
-  bestFloorCleared: 0,
-};
+function buildDefaultProfile(): PlayerProfile {
+  const starterCharacterIds = ['apprentice_warrior', 'shield_recruit'];
+  const base: PlayerProfile = {
+    gold: 300,
+    stones: 300,
+    ap: createInitialAp(),
+    materials: { enhance: 0, evolve: 0, unlock: 0 },
+    ownedCharacterCounts: Object.fromEntries(starterCharacterIds.map((id) => [id, 1])),
+    ownedCardCounts: {
+      apprentice_warrior_atk: 1,
+      apprentice_warrior_skl: 1,
+      shield_recruit_atk: 1,
+      shield_recruit_skl: 1,
+    },
+    characterProgress: Object.fromEntries(
+      starterCharacterIds.map((id) => [id, createInitialProgress()])
+    ),
+    partyIds: starterCharacterIds,
+    deckCardIds: [],
+    charPity: 0,
+    cardPity: 0,
+    totalCharPulls: 0,
+    totalCardPulls: 0,
+    clearedStoryStageIds: [],
+  };
+  return { ...base, deckCardIds: buildDefaultDeck(base) };
+}
+
+export const DEFAULT_PROFILE: PlayerProfile = buildDefaultProfile();
 
 export async function loadProfile(): Promise<PlayerProfile> {
   try {
     const raw = await AsyncStorage.getItem(PROFILE_KEY);
-    if (!raw) return DEFAULT_PROFILE;
-    return { ...DEFAULT_PROFILE, ...JSON.parse(raw) };
+    if (!raw) return buildDefaultProfile();
+    const parsed = JSON.parse(raw);
+    return { ...buildDefaultProfile(), ...parsed };
   } catch {
-    return DEFAULT_PROFILE;
+    return buildDefaultProfile();
   }
 }
 
 export async function saveProfile(profile: PlayerProfile): Promise<void> {
   await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-}
-
-export async function loadRun(): Promise<RunState | null> {
-  try {
-    const raw = await AsyncStorage.getItem(RUN_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as RunState;
-  } catch {
-    return null;
-  }
-}
-
-export async function saveRun(run: RunState | null): Promise<void> {
-  if (run === null) {
-    await AsyncStorage.removeItem(RUN_KEY);
-  } else {
-    await AsyncStorage.setItem(RUN_KEY, JSON.stringify(run));
-  }
 }

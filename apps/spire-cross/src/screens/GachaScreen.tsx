@@ -3,38 +3,63 @@ import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGame } from '../state/GameContext';
 import { getCharacter, RARITY_COLOR } from '../data/characters';
-import { GachaPullResult } from '../types';
+import { getCard } from '../data/cards';
+import { GachaPoolKind, GachaPullResult } from '../types';
 import { PITY_LIMIT, SINGLE_PULL_COST, TEN_PULL_COST, pullGacha } from '../game/gacha';
 
 export default function GachaScreen() {
   const { profile, updateProfile } = useGame();
+  const [pool, setPool] = useState<GachaPoolKind>('character');
   const [results, setResults] = useState<GachaPullResult[] | null>(null);
+
+  const pity = pool === 'character' ? profile.charPity : profile.cardPity;
+  const pityRemain = Math.max(0, PITY_LIMIT - pity);
 
   const doPull = (count: 1 | 10) => {
     const cost = count === 1 ? SINGLE_PULL_COST : TEN_PULL_COST;
-    if (profile.gems < cost) {
-      Alert.alert('ジェムが足りません', `${cost}ジェム必要です。`);
+    if (profile.stones < cost) {
+      Alert.alert('交界石が足りません', `${cost}個必要です。`);
       return;
     }
-    const outcome = pullGacha(profile, count);
+    const outcome = pullGacha(profile, pool, count);
     updateProfile(() => outcome.profile);
     setResults(outcome.pulls);
   };
 
-  const pityRemain = Math.max(0, PITY_LIMIT - profile.pityCounter);
+  const switchPool = (next: GachaPoolKind) => {
+    setPool(next);
+    setResults(null);
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>キャラクターガチャ</Text>
+        <Text style={styles.title}>ガチャ</Text>
         <View style={styles.walletChip}>
-          <Text style={styles.walletText}>💎 {profile.gems}</Text>
+          <Text style={styles.walletText}>💎 交界石 {profile.stones}</Text>
+        </View>
+
+        <View style={styles.tabRow}>
+          <Pressable
+            style={[styles.tabBtn, pool === 'character' && styles.tabBtnActive]}
+            onPress={() => switchPool('character')}
+          >
+            <Text style={[styles.tabText, pool === 'character' && styles.tabTextActive]}>
+              キャラガチャ
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.tabBtn, pool === 'card' && styles.tabBtnActive]}
+            onPress={() => switchPool('card')}
+          >
+            <Text style={[styles.tabText, pool === 'card' && styles.tabTextActive]}>カードガチャ</Text>
+          </Pressable>
         </View>
 
         <View style={styles.rateBox}>
           <Text style={styles.rateText}>排出率  SSR 3% / SR 12% / R 35% / N 50%</Text>
           <Text style={styles.rateText}>天井まであと{pityRemain}回で SSR 確定</Text>
-          <Text style={styles.rateText}>10連は R 以上が1体確定</Text>
+          <Text style={styles.rateText}>10連は R 以上が1件確定</Text>
         </View>
 
         <View style={styles.btnRow}>
@@ -53,26 +78,23 @@ export default function GachaScreen() {
             <Text style={styles.resultsTitle}>結果</Text>
             <View style={styles.resultsGrid}>
               {results.map((r, idx) => {
-                const character = getCharacter(r.characterId);
-                if (!character) return null;
+                const emoji = r.pool === 'character' ? getCharacter(r.id)?.emoji : '🎴';
+                const name = r.pool === 'character' ? getCharacter(r.id)?.name : getCard(r.id).name;
                 return (
-                  <View
-                    key={idx}
-                    style={[styles.resultTile, { borderColor: RARITY_COLOR[r.rarity] }]}
-                  >
-                    <Text style={styles.resultEmoji}>{character.emoji}</Text>
-                    <View
-                      style={[styles.rarityBadge, { backgroundColor: RARITY_COLOR[r.rarity] }]}
-                    >
+                  <View key={idx} style={[styles.resultTile, { borderColor: RARITY_COLOR[r.rarity] }]}>
+                    <Text style={styles.resultEmoji}>{emoji}</Text>
+                    <View style={[styles.rarityBadge, { backgroundColor: RARITY_COLOR[r.rarity] }]}>
                       <Text style={styles.rarityBadgeText}>{r.rarity}</Text>
                     </View>
                     <Text style={styles.resultName} numberOfLines={1}>
-                      {character.name}
+                      {name}
                     </Text>
                     {r.isNew ? (
                       <Text style={styles.newTag}>NEW!</Text>
                     ) : (
-                      <Text style={styles.dupeTag}>重複→ゴールド</Text>
+                      <Text style={styles.dupeTag}>
+                        {r.pool === 'character' ? '重複→ゴールド' : '所持数+1'}
+                      </Text>
                     )}
                   </View>
                 );
@@ -98,6 +120,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   walletText: { color: '#fff', fontWeight: '700' },
+  tabRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  tabBtn: { flex: 1, backgroundColor: '#1c1c26', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  tabBtnActive: { backgroundColor: '#3f8efc' },
+  tabText: { color: '#9a9ab0', fontWeight: '700', fontSize: 13 },
+  tabTextActive: { color: '#fff' },
   rateBox: { backgroundColor: '#1c1c26', borderRadius: 12, padding: 12, marginBottom: 16 },
   rateText: { color: '#c4c4d4', fontSize: 12, marginBottom: 2 },
   btnRow: { flexDirection: 'row', gap: 12 },

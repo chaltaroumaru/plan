@@ -1,5 +1,6 @@
 import { CHARACTERS } from '../data/characters';
-import { GachaPullResult, PlayerProfile, Rarity } from '../types';
+import { CHARACTER_CARDS } from '../data/cards';
+import { GachaPoolKind, GachaPullResult, PlayerProfile, Rarity } from '../types';
 
 export const SINGLE_PULL_COST = 150;
 export const TEN_PULL_COST = 1350;
@@ -11,6 +12,8 @@ const BASE_RATES: Record<Rarity, number> = {
   SR: 0.12,
   SSR: 0.03,
 };
+
+const DUPE_GOLD: Record<Rarity, number> = { N: 10, R: 20, SR: 50, SSR: 150 };
 
 function rollRarity(pityCounter: number): Rarity {
   if (pityCounter >= PITY_LIMIT - 1) {
@@ -28,9 +31,13 @@ function rollRarity(pityCounter: number): Rarity {
   return 'N';
 }
 
-function pickCharacterOfRarity(rarity: Rarity) {
-  const pool = CHARACTERS.filter((c) => c.rarity === rarity);
-  return pool[Math.floor(Math.random() * pool.length)];
+function poolFor(pool: GachaPoolKind) {
+  return pool === 'character' ? CHARACTERS : CHARACTER_CARDS;
+}
+
+function pickOfRarity(pool: GachaPoolKind, rarity: Rarity) {
+  const candidates = poolFor(pool).filter((c) => c.rarity === rarity);
+  return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
 export interface GachaOutcome {
@@ -39,55 +46,64 @@ export interface GachaOutcome {
   goldFromDupes: number;
 }
 
-function doSinglePull(profile: PlayerProfile): { result: GachaPullResult; pity: number } {
-  const rarity = rollRarity(profile.pityCounter);
-  const character = pickCharacterOfRarity(rarity);
-  const isNew = !profile.ownedCharacterIds.includes(character.id);
-  const pity = rarity === 'SSR' ? 0 : profile.pityCounter + 1;
-  return { result: { characterId: character.id, rarity, isNew }, pity };
-}
-
-export function pullGacha(profile: PlayerProfile, count: 1 | 10): GachaOutcome {
+export function pullGacha(profile: PlayerProfile, pool: GachaPoolKind, count: 1 | 10): GachaOutcome {
   const cost = count === 1 ? SINGLE_PULL_COST : TEN_PULL_COST;
-  if (profile.gems < cost) {
-    throw new Error('ジェムが足りません');
+  if (profile.stones < cost) {
+    throw new Error('交界石が足りません');
   }
 
-  let working: PlayerProfile = {
+  const working: PlayerProfile = {
     ...profile,
-    gems: profile.gems - cost,
-    ownedCharacterIds: [...profile.ownedCharacterIds],
+    stones: profile.stones - cost,
+    ownedCharacterCounts: { ...profile.ownedCharacterCounts },
+    ownedCardCounts: { ...profile.ownedCardCounts },
   };
 
   const pulls: GachaPullResult[] = [];
   let goldFromDupes = 0;
+  let pity = pool === 'character' ? working.charPity : working.cardPity;
+
+  const applyPull = (rarity: Rarity, item: { id: string }) => {
+    const counts = pool === 'character' ? working.ownedCharacterCounts : working.ownedCardCounts;
+    const isNew = !counts[item.id];
+    counts[item.id] = (counts[item.id] ?? 0) + 1;
+    if (pool === 'character' && !isNew) {
+      goldFromDupes += DUPE_GOLD[rarity];
+    }
+    pulls.push({ pool, id: item.id, rarity, isNew });
+    pity = rarity === 'SSR' ? 0 : pity + 1;
+  };
 
   for (let i = 0; i < count; i++) {
-    const { result, pity } = doSinglePull(working);
-    working.pityCounter = pity;
-    working.totalPulls += 1;
-    if (result.isNew) {
-      working.ownedCharacterIds.push(result.characterId);
-    } else {
-      const dupeGold = { N: 10, R: 20, SR: 50, SSR: 150 }[result.rarity];
-      goldFromDupes += dupeGold;
-    }
-    pulls.push(result);
+    const rarity = rollRarity(pity);
+    const item = pickOfRarity(pool, rarity);
+    applyPull(rarity, item);
   }
 
   // 10連保証: R以上が1体もいなければ最後の1体をRに差し替える
   if (count === 10 && pulls.every((p) => p.rarity === 'N')) {
-    const guaranteed = pickCharacterOfRarity('R');
-    const isNew = !working.ownedCharacterIds.includes(guaranteed.id);
-    if (isNew) {
-      working.ownedCharacterIds.push(guaranteed.id);
-    } else {
-      goldFromDupes += 20;
+    const last = pulls[pulls.length - 1];
+    const counts = pool === 'character' ? working.ownedCharacterCounts : working.ownedCardCounts;
+    counts[last.id] -= 1;
+    if (counts[last.id] <= 0) delete counts[last.id];
+
+    const guaranteed = pickOfRarity(pool, 'R');
+    const isNew = !counts[guaranteed.id];
+    counts[guaranteed.id] = (counts[guaranteed.id] ?? 0) + 1;
+    if (pool === 'character' && !isNew) {
+      goldFromDupes += DUPE_GOLD.R;
     }
-    pulls[pulls.length - 1] = { characterId: guaranteed.id, rarity: 'R', isNew };
+    pulls[pulls.length - 1] = { pool, id: guaranteed.id, rarity: 'R', isNew };
   }
 
   working.gold += goldFromDupes;
+  if (pool === 'character') {
+    working.charPity = pity;
+    working.totalCharPulls += count;
+  } else {
+    working.cardPity = pity;
+    working.totalCardPulls += count;
+  }
 
   return { pulls, profile: working, goldFromDupes };
 }

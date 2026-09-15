@@ -10,7 +10,11 @@ export interface CharacterDef {
   element: Element;
   color: string;
   emoji: string;
-  bonusHp: number;
+  baseHp: number;
+  baseAtk: number;
+  baseDef: number;
+  /** このキャラのスキルツリー特殊ノードの解放条件になるカード */
+  signatureCardId: string;
   cardIds: [string, string];
 }
 
@@ -23,9 +27,10 @@ export interface CardDef {
   cost: number;
   value: number;
   description: string;
-  ownerId: string | 'basic';
+  /** フレーバー上の関連キャラ(スキルツリー連動に使用)。基本カードはnull */
+  linkedCharacterId: string | null;
+  element: Element | null;
   rarity: Rarity;
-  upgraded?: boolean;
 }
 
 export type EnemyIntent =
@@ -43,37 +48,110 @@ export interface EnemyDef {
   isElite?: boolean;
 }
 
-export type NodeType = 'battle' | 'elite' | 'rest' | 'shop' | 'event' | 'boss';
+export type MaterialType = 'enhance' | 'evolve' | 'unlock';
 
-export interface RunNode {
+export type DungeonCategory = 'enhance' | 'evolve' | 'unlock' | 'raid' | 'event';
+
+export interface DungeonStageDef {
   id: string;
-  floor: number;
-  col: number;
-  type: NodeType;
-  enemyId?: string;
-  connections: string[];
-  visited: boolean;
+  category: DungeonCategory;
+  name: string;
+  apCost: number;
+  enemyIds: string[];
+  rewardGold: number;
+  rewardMaterial: { type: MaterialType; amount: number } | null;
+  rewardStones: number;
 }
 
-export interface RunState {
-  nodes: RunNode[];
-  currentNodeId: string | null;
-  deck: string[];
-  hp: number;
-  maxHp: number;
-  partyIds: string[];
-  strength: number;
-  floor: number;
-  pendingBattleNodeId?: string;
+export interface StoryStageDef {
+  id: string;
+  chapter: number;
+  order: number;
+  title: string;
+  flavorText: string;
+  enemyIds: string[];
+  rewardGold: number;
+  rewardStones: number;
+  rewardExp: number;
+}
+
+export type SkillTreeEffect =
+  | { kind: 'hp'; amount: number }
+  | { kind: 'atk'; amount: number }
+  | { kind: 'def'; amount: number }
+  | { kind: 'critRate'; amount: number }
+  | { kind: 'critCutRate'; amount: number }
+  | { kind: 'ultimateCooldown'; amount: number }
+  | { kind: 'elementMatchBonus'; amount: number }
+  | { kind: 'ultimateUnlock' };
+
+export interface SkillTreeNodeDef {
+  id: string;
+  label: string;
+  description: string;
+  cost: number;
+  effect: SkillTreeEffect;
+  requiresNodeIds: string[];
+  requiresSignatureCard?: boolean;
+  requiresMaterial?: { type: MaterialType; amount: number };
+  requiresTotalSpent?: number;
+}
+
+export interface CharacterProgress {
+  level: number;
+  exp: number;
+  skillPoints: number;
+  allocatedNodeIds: string[];
+}
+
+export interface ApState {
+  current: number;
+  updatedAt: string; // ISO timestamp
 }
 
 export interface PlayerProfile {
   gold: number;
-  gems: number;
-  ownedCharacterIds: string[];
-  pityCounter: number;
-  totalPulls: number;
-  bestFloorCleared: number;
+  stones: number; // 交界石
+  ap: ApState;
+  materials: Record<MaterialType, number>;
+  ownedCharacterCounts: Record<string, number>;
+  ownedCardCounts: Record<string, number>;
+  characterProgress: Record<string, CharacterProgress>;
+  partyIds: string[];
+  deckCardIds: string[];
+  charPity: number;
+  cardPity: number;
+  totalCharPulls: number;
+  totalCardPulls: number;
+  clearedStoryStageIds: string[];
+}
+
+export interface BattleCharacterState {
+  uid: string;
+  characterId: string;
+  hp: number;
+  maxHp: number;
+  block: number;
+  atk: number;
+  def: number;
+  critRate: number;
+  critCutRate: number;
+  elementMatchBonus: number;
+  ultimateReady: boolean;
+  ultimateAvailable: boolean;
+  ultimateCooldownLeft: number;
+  ultimateMaxCooldown: number;
+  alive: boolean;
+}
+
+export interface BattleEnemyState {
+  uid: string;
+  enemyId: string;
+  hp: number;
+  maxHp: number;
+  block: number;
+  intent: EnemyIntent;
+  alive: boolean;
 }
 
 export interface BattleCardInstance {
@@ -81,17 +159,9 @@ export interface BattleCardInstance {
   cardId: string;
 }
 
-export interface BattleState {
-  enemyId: string;
-  enemyHp: number;
-  enemyMaxHp: number;
-  enemyBlock: number;
-  enemyAtkBonus: number;
-  enemyIntent: EnemyIntent;
-  playerHp: number;
-  playerMaxHp: number;
-  playerBlock: number;
-  strength: number;
+export interface BattlePartyState {
+  characters: BattleCharacterState[];
+  enemies: BattleEnemyState[];
   energy: number;
   maxEnergy: number;
   drawPile: BattleCardInstance[];
@@ -103,8 +173,11 @@ export interface BattleState {
   didWin: boolean;
 }
 
+export type GachaPoolKind = 'character' | 'card';
+
 export interface GachaPullResult {
-  characterId: string;
+  pool: GachaPoolKind;
+  id: string; // characterId or cardId
   rarity: Rarity;
   isNew: boolean;
 }

@@ -16,7 +16,19 @@ export const RARITY_LABEL: Record<Rarity, string> = {
   SSR: 'SSR',
 };
 
-export const CHARACTERS: CharacterDef[] = [
+/** レアリティごとの基礎ステータス基準値(キャラ間の差は今後のバランス調整で付ける想定) */
+export const BASE_STATS_BY_RARITY: Record<Rarity, { hp: number; atk: number; def: number }> = {
+  N: { hp: 40, atk: 8, def: 4 },
+  R: { hp: 55, atk: 11, def: 6 },
+  SR: { hp: 75, atk: 15, def: 9 },
+  SSR: { hp: 100, atk: 20, def: 13 },
+};
+
+type CharacterSeed = Omit<CharacterDef, 'baseHp' | 'baseAtk' | 'baseDef' | 'signatureCardId'> & {
+  cardIds: [string, string];
+};
+
+const CHARACTER_SEEDS: CharacterSeed[] = [
   {
     id: 'apprentice_warrior',
     name: '見習い戦士',
@@ -25,7 +37,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '火',
     color: '#e2725b',
     emoji: '🗡️',
-    bonusHp: 5,
     cardIds: ['apprentice_warrior_atk', 'apprentice_warrior_skl'],
   },
   {
@@ -36,7 +47,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '風',
     color: '#5fae6b',
     emoji: '🏹',
-    bonusHp: 5,
     cardIds: ['forest_archer_atk', 'forest_archer_skl'],
   },
   {
@@ -47,7 +57,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '光',
     color: '#f2d06b',
     emoji: '💊',
-    bonusHp: 6,
     cardIds: ['village_healer_atk', 'village_healer_skl'],
   },
   {
@@ -58,7 +67,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '土',
     color: '#a68a64',
     emoji: '🛡️',
-    bonusHp: 8,
     cardIds: ['shield_recruit_atk', 'shield_recruit_skl'],
   },
   {
@@ -69,7 +77,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '雷',
     color: '#e8c93f',
     emoji: '⚡',
-    bonusHp: 10,
     cardIds: ['lightning_swordsman_atk', 'lightning_swordsman_skl'],
   },
   {
@@ -80,7 +87,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '水',
     color: '#5bc0e8',
     emoji: '❄️',
-    bonusHp: 9,
     cardIds: ['frost_mage_atk', 'frost_mage_skl'],
   },
   {
@@ -91,7 +97,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '闇',
     color: '#6a5b8a',
     emoji: '🗡️',
-    bonusHp: 8,
     cardIds: ['shadow_rogue_atk', 'shadow_rogue_skl'],
   },
   {
@@ -102,7 +107,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '光',
     color: '#f2e6a0',
     emoji: '⚔️',
-    bonusHp: 12,
     cardIds: ['paladin_trainee_atk', 'paladin_trainee_skl'],
   },
   {
@@ -113,7 +117,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '火',
     color: '#e8452f',
     emoji: '🔥',
-    bonusHp: 18,
     cardIds: ['crimson_blade_saint_atk', 'crimson_blade_saint_pow'],
   },
   {
@@ -124,7 +127,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '闇',
     color: '#4a3466',
     emoji: '🔮',
-    bonusHp: 16,
     cardIds: ['abyss_witch_atk', 'abyss_witch_pow'],
   },
   {
@@ -135,7 +137,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '風',
     color: '#4fb0a5',
     emoji: '🦅',
-    bonusHp: 17,
     cardIds: ['sky_hunter_atk', 'sky_hunter_pow'],
   },
   {
@@ -146,7 +147,6 @@ export const CHARACTERS: CharacterDef[] = [
     element: '光',
     color: '#ffd76a',
     emoji: '✨',
-    bonusHp: 30,
     cardIds: ['star_guiding_goddess_atk', 'star_guiding_goddess_pow'],
   },
   {
@@ -157,10 +157,20 @@ export const CHARACTERS: CharacterDef[] = [
     element: '闇',
     color: '#7a1f3d',
     emoji: '🐉',
-    bonusHp: 32,
     cardIds: ['doom_dragoon_atk', 'doom_dragoon_pow'],
   },
 ];
+
+export const CHARACTERS: CharacterDef[] = CHARACTER_SEEDS.map((seed) => {
+  const base = BASE_STATS_BY_RARITY[seed.rarity];
+  return {
+    ...seed,
+    baseHp: base.hp,
+    baseAtk: base.atk,
+    baseDef: base.def,
+    signatureCardId: seed.cardIds[0],
+  };
+});
 
 export const CHARACTER_MAP: Record<string, CharacterDef> = Object.fromEntries(
   CHARACTERS.map((c) => [c.id, c])

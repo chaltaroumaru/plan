@@ -8,7 +8,19 @@ interface Props {
   onPress?: () => void;
   disabled?: boolean;
   compact?: boolean;
+  selected?: boolean;
+  testID?: string;
 }
+
+const ELEMENT_ICON: Record<string, string> = {
+  火: '🔥',
+  水: '💧',
+  風: '🌪️',
+  土: '🪨',
+  雷: '⚡',
+  光: '✨',
+  闇: '🌑',
+};
 
 const TYPE_LABEL: Record<CardDef['type'], string> = {
   attack: '攻撃',
@@ -22,9 +34,10 @@ const TYPE_ICON: Record<CardDef['type'], string> = {
   power: '✨',
 };
 
-export default function CardView({ card, onPress, disabled, compact }: Props) {
+export default function CardView({ card, onPress, disabled, compact, selected, testID }: Props) {
   return (
     <Pressable
+      testID={testID}
       onPress={onPress}
       disabled={disabled || !onPress}
       style={[
@@ -32,11 +45,13 @@ export default function CardView({ card, onPress, disabled, compact }: Props) {
         compact && styles.cardCompact,
         { borderColor: RARITY_COLOR[card.rarity] },
         disabled && styles.disabled,
+        selected && styles.selected,
       ]}
     >
       <View style={styles.costBadge}>
         <Text style={styles.costText}>{card.cost}</Text>
       </View>
+      {card.element && <Text style={styles.elementBadge}>{ELEMENT_ICON[card.element]}</Text>}
       <Text style={styles.icon}>{TYPE_ICON[card.type]}</Text>
       <Text style={styles.name} numberOfLines={2}>
         {card.name}
@@ -65,6 +80,16 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.35,
+  },
+  selected: {
+    backgroundColor: '#33334a',
+    transform: [{ translateY: -8 }],
+  },
+  elementBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    fontSize: 14,
   },
   costBadge: {
     position: 'absolute',

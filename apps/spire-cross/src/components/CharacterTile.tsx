@@ -7,10 +7,11 @@ interface Props {
   character: CharacterDef;
   owned: boolean;
   selected?: boolean;
+  level?: number;
   onPress?: () => void;
 }
 
-export default function CharacterTile({ character, owned, selected, onPress }: Props) {
+export default function CharacterTile({ character, owned, selected, level, onPress }: Props) {
   return (
     <Pressable
       onPress={onPress}
@@ -34,6 +35,7 @@ export default function CharacterTile({ character, owned, selected, onPress }: P
           {character.title}
         </Text>
       )}
+      {owned && level !== undefined && <Text style={styles.level}>Lv.{level}</Text>}
     </Pressable>
   );
 }
@@ -81,5 +83,11 @@ const styles = StyleSheet.create({
     color: '#9a9ab0',
     fontSize: 10,
     marginTop: 1,
+  },
+  level: {
+    color: '#f5b400',
+    fontSize: 10,
+    fontWeight: '800',
+    marginTop: 2,
   },
 });
