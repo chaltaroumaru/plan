@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Alert, Animated, Easing, Modal, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Alert, Animated, Easing, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useGame } from '../state/GameContext';
@@ -13,17 +13,14 @@ type GlowKind = 'SSR' | 'SR' | 'normal';
 const GLOW_COLOR: Record<GlowKind, string> = {
   SSR: '#ffd76a',
   SR: '#b164e8',
-  normal: '#7c5cff',
+  normal: '#c9b8ff',
 };
 
 const SUMMON_LABEL: Record<GlowKind, string> = {
-  SSR: '眩い想いが共鳴している……!',
-  SR: '強い想いが共鳴している……',
-  normal: '交界石の記憶が共鳴している……',
+  SSR: '眩い想いが塔を駆け上る……!',
+  SR: '強い想いが塔を駆け上る……',
+  normal: '交界石の記憶が塔を駆け上る……',
 };
-
-const ORBIT_SHARD_ANGLES = [0, 60, 120, 180, 240, 300];
-const ORBIT_RADIUS = 96;
 
 function highestGlowKind(pulls: GachaPullResult[]): GlowKind {
   if (pulls.some((p) => p.rarity === 'SSR')) return 'SSR';
@@ -36,21 +33,22 @@ export default function GachaScreen() {
   const [pool, setPool] = useState<GachaPoolKind>('character');
   const [results, setResults] = useState<GachaPullResult[] | null>(null);
   const [summoning, setSummoning] = useState(false);
+  const [shardPulls, setShardPulls] = useState<GachaPullResult[] | null>(null);
   const [showSSRText, setShowSSRText] = useState(false);
   const [glowKind, setGlowKind] = useState<GlowKind>('normal');
+  const [overlayHeight, setOverlayHeight] = useState(640);
+  const [overlayWidth, setOverlayWidth] = useState(360);
 
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-  const ringRotateAnim = useRef(new Animated.Value(0)).current;
-  const shockwaveAnim = useRef(new Animated.Value(0)).current;
+  const climbAnim = useRef(new Animated.Value(0)).current;
   const ssrRevealAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const flashAnim = useRef(new Animated.Value(0)).current;
   const cardAnimsRef = useRef<Animated.Value[]>([]);
   const cardFlashRef = useRef<Animated.Value[]>([]);
+  const shardAnimsRef = useRef<Animated.Value[]>([]);
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ssrTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPullsRef = useRef<GachaPullResult[] | null>(null);
-  const activeLoopsRef = useRef<Animated.CompositeAnimation[]>([]);
 
   const pity = pool === 'character' ? profile.charPity : profile.cardPity;
   const pityRemain = Math.max(0, PITY_LIMIT - pity);
@@ -68,10 +66,9 @@ export default function GachaScreen() {
   };
 
   const revealResults = (pulls: GachaPullResult[]) => {
-    activeLoopsRef.current.forEach((loop) => loop.stop());
-    activeLoopsRef.current = [];
     setSummoning(false);
     setShowSSRText(false);
+    setShardPulls(null);
     flashAnim.setValue(1);
     cardAnimsRef.current = pulls.map(() => new Animated.Value(0));
     cardFlashRef.current = pulls.map(() => new Animated.Value(0));
@@ -96,32 +93,25 @@ export default function GachaScreen() {
     setGlowKind(kind);
     setSummoning(true);
     setShowSSRText(false);
+    setShardPulls(pulls);
     pendingPullsRef.current = pulls;
 
-    pulseAnim.setValue(0);
-    ringRotateAnim.setValue(0);
-    shockwaveAnim.setValue(0);
+    climbAnim.setValue(0);
     ssrRevealAnim.setValue(0);
     shakeAnim.setValue(0);
+    shardAnimsRef.current = pulls.map(() => new Animated.Value(0));
 
-    const pulseSpeed = kind === 'SSR' ? 340 : kind === 'SR' ? 440 : 520;
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: pulseSpeed, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0, duration: pulseSpeed, useNativeDriver: true }),
-      ])
-    );
-    const ringLoop = Animated.loop(
-      Animated.timing(ringRotateAnim, { toValue: 1, duration: 4200, easing: Easing.linear, useNativeDriver: true })
-    );
-    pulseLoop.start();
-    ringLoop.start();
-    activeLoopsRef.current = [pulseLoop, ringLoop];
+    const climbDuration = kind === 'SSR' ? 1500 : kind === 'SR' ? 1150 : 900;
 
-    const summonDuration = kind === 'SSR' ? 2100 : kind === 'SR' ? 1400 : 1000;
-
-    if (kind === 'SSR') {
-      ssrTimerRef.current = setTimeout(() => {
+    // 塔が下から上へ光って駆け上る(高さ/位置を動かすのでuseNativeDriverは使えない)
+    Animated.timing(climbAnim, {
+      toValue: 1,
+      duration: climbDuration,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start(() => {
+      // 頂上に到達 → 記憶のかけらが弾け飛ぶ
+      if (kind === 'SSR') {
         setShowSSRText(true);
         Animated.spring(ssrRevealAnim, { toValue: 1, friction: 4, useNativeDriver: true }).start();
         Animated.sequence([
@@ -130,21 +120,27 @@ export default function GachaScreen() {
           Animated.timing(shakeAnim, { toValue: 1, duration: 55, useNativeDriver: true }),
           Animated.timing(shakeAnim, { toValue: 0, duration: 55, useNativeDriver: true }),
         ]).start();
-      }, summonDuration - 700);
-    }
-
-    revealTimerRef.current = setTimeout(() => {
-      Animated.timing(shockwaveAnim, { toValue: 1, duration: 340, useNativeDriver: true }).start();
-      const pending = pendingPullsRef.current;
-      pendingPullsRef.current = null;
-      if (pending) revealResults(pending);
-    }, summonDuration);
+      }
+      Animated.stagger(
+        60,
+        shardAnimsRef.current.map((v) =>
+          Animated.timing(v, { toValue: 1, duration: 560, easing: Easing.out(Easing.quad), useNativeDriver: true })
+        )
+      ).start(() => {
+        revealTimerRef.current = setTimeout(() => {
+          const pending = pendingPullsRef.current;
+          pendingPullsRef.current = null;
+          if (pending) revealResults(pending);
+        }, 450);
+      });
+    });
   };
 
   const skipSummon = () => {
     if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
     if (ssrTimerRef.current) clearTimeout(ssrTimerRef.current);
-    shockwaveAnim.setValue(1);
+    climbAnim.stopAnimation();
+    shardAnimsRef.current.forEach((v) => v.stopAnimation());
     const pending = pendingPullsRef.current;
     pendingPullsRef.current = null;
     if (pending) revealResults(pending);
@@ -261,74 +257,82 @@ export default function GachaScreen() {
         )}
       </ScrollView>
 
-      <Modal visible={summoning} transparent animationType="fade">
-        <Animated.View
-          style={[
-            styles.summonOverlay,
-            { transform: [{ translateX: shakeAnim.interpolate({ inputRange: [-1, 1], outputRange: [-8, 8] }) }] },
-          ]}
+      {summoning && (
+        <View
+          style={styles.summonOverlay}
+          onLayout={(e) => {
+            setOverlayHeight(e.nativeEvent.layout.height);
+            setOverlayWidth(e.nativeEvent.layout.width);
+          }}
         >
-          <View style={styles.summonStage}>
-            <View style={styles.stageLayer}>
+          {/* 塔を駆け上る光の柱 */}
+          <Animated.View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: overlayWidth / 2 - 22,
+              width: 44,
+              borderRadius: 22,
+              backgroundColor: glowColor,
+              opacity: 0.32,
+              height: climbAnim.interpolate({ inputRange: [0, 1], outputRange: [0, overlayHeight] }),
+            }}
+          />
+          {/* 光の柱の先端(駆け上る光そのもの) */}
+          <Animated.View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              left: overlayWidth / 2 - 30,
+              bottom: climbAnim.interpolate({ inputRange: [0, 1], outputRange: [-30, overlayHeight - 30] }),
+            }}
+          >
+            <Svg width={60} height={60}>
+              <Defs>
+                <RadialGradient id="climbHead" cx="50%" cy="50%" r="50%">
+                  <Stop offset="0" stopColor="#ffffff" stopOpacity={1} />
+                  <Stop offset="0.5" stopColor={glowColor} stopOpacity={0.85} />
+                  <Stop offset="1" stopColor={glowColor} stopOpacity={0} />
+                </RadialGradient>
+              </Defs>
+              <Circle cx={30} cy={30} r={30} fill="url(#climbHead)" />
+            </Svg>
+          </Animated.View>
+
+          {/* 頂上ではじける記憶のかけら(引いた数だけ、それぞれレアリティ色) */}
+          {shardPulls?.map((p, idx) => {
+            const v = shardAnimsRef.current[idx] ?? new Animated.Value(0);
+            const isSSR = p.rarity === 'SSR';
+            const count = shardPulls.length;
+            const spread = (idx - (count - 1) / 2) * Math.min(26, (overlayWidth - 60) / Math.max(count, 1));
+            const fallDistance = 64 + (idx % 3) * 18;
+            return (
               <Animated.View
+                key={idx}
+                testID={`shard-${idx}`}
+                pointerEvents="none"
                 style={{
-                  width: 1,
-                  height: 1,
+                  position: 'absolute',
+                  left: overlayWidth / 2 - 12,
+                  bottom: overlayHeight - 40,
+                  opacity: v.interpolate({ inputRange: [0, 0.12, 1], outputRange: [0, 1, 1] }),
                   transform: [
-                    { rotate: ringRotateAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) },
+                    { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [0, spread] }) },
+                    { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, fallDistance] }) },
+                    {
+                      scale: v.interpolate({
+                        inputRange: [0, 0.25, 1],
+                        outputRange: [0.2, isSSR ? 1.35 : 1, isSSR ? 1.2 : 0.92],
+                      }),
+                    },
                   ],
                 }}
               >
-                {ORBIT_SHARD_ANGLES.map((deg) => {
-                  const rad = (deg * Math.PI) / 180;
-                  const x = Math.cos(rad) * ORBIT_RADIUS;
-                  const y = Math.sin(rad) * ORBIT_RADIUS;
-                  return (
-                    <Text
-                      key={deg}
-                      style={[styles.orbitShard, { left: x - 9, top: y - 9, color: glowColor }]}
-                    >
-                      ◆
-                    </Text>
-                  );
-                })}
+                <Text style={{ fontSize: isSSR ? 26 : 18, color: RARITY_COLOR[p.rarity] }}>◆</Text>
               </Animated.View>
-            </View>
-
-            <View style={styles.stageLayer} pointerEvents="none">
-              <Animated.View
-                style={{
-                  width: 220,
-                  height: 220,
-                  borderRadius: 110,
-                  borderWidth: 3,
-                  borderColor: glowColor,
-                  opacity: shockwaveAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 0] }),
-                  transform: [{ scale: shockwaveAnim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.9] }) }],
-                }}
-              />
-            </View>
-
-            <View style={styles.stageLayer}>
-              <Animated.View
-                style={{
-                  opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }),
-                  transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.18] }) }],
-                }}
-              >
-                <Svg width={200} height={200}>
-                  <Defs>
-                    <RadialGradient id="summonGlow" cx="50%" cy="50%" r="50%">
-                      <Stop offset="0" stopColor={glowColor} stopOpacity={0.95} />
-                      <Stop offset="0.55" stopColor={glowColor} stopOpacity={0.4} />
-                      <Stop offset="1" stopColor={glowColor} stopOpacity={0} />
-                    </RadialGradient>
-                  </Defs>
-                  <Circle cx={100} cy={100} r={100} fill="url(#summonGlow)" />
-                </Svg>
-              </Animated.View>
-            </View>
-          </View>
+            );
+          })}
 
           {showSSRText && (
             <Animated.Text
@@ -344,13 +348,20 @@ export default function GachaScreen() {
             </Animated.Text>
           )}
 
-          <Text style={[styles.summonText, { color: glowColor }]}>{SUMMON_LABEL[glowKind]}</Text>
+          <Animated.Text
+            style={[
+              styles.summonText,
+              { color: glowColor, transform: [{ translateX: shakeAnim.interpolate({ inputRange: [-1, 1], outputRange: [-8, 8] }) }] },
+            ]}
+          >
+            {SUMMON_LABEL[glowKind]}
+          </Animated.Text>
 
           <Pressable style={styles.skipBtn} onPress={skipSummon}>
             <Text style={styles.skipBtnText}>タップでスキップ ▶</Text>
           </Pressable>
-        </Animated.View>
-      </Modal>
+        </View>
+      )}
 
       <Animated.View
         pointerEvents="none"
@@ -419,25 +430,20 @@ const styles = StyleSheet.create({
   newTag: { color: '#f5b400', fontSize: 10, fontWeight: '800', marginTop: 2 },
   dupeTag: { color: '#9a9ab0', fontSize: 9, marginTop: 2 },
   summonOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(6,4,16,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  summonStage: { width: 240, height: 240 },
-  stageLayer: {
     position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
+    top: 0,
     bottom: 0,
+    backgroundColor: 'rgba(6,4,16,0.55)',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+    paddingBottom: 36,
   },
-  orbitShard: { position: 'absolute', fontSize: 18, fontWeight: '900' },
-  ssrConfirmText: { fontSize: 22, fontWeight: '900', color: '#ffd76a', marginTop: 8 },
-  summonText: { fontSize: 14, fontWeight: '800', marginTop: 20 },
-  skipBtn: { marginTop: 28, paddingVertical: 8, paddingHorizontal: 16 },
+  ssrConfirmText: { fontSize: 22, fontWeight: '900', color: '#ffd76a', marginBottom: 6 },
+  summonText: { fontSize: 14, fontWeight: '800', marginBottom: 14, textAlign: 'center' },
+  skipBtn: { paddingVertical: 8, paddingHorizontal: 16 },
   skipBtnText: { color: '#8a80b0', fontSize: 12, fontWeight: '700' },
   flashOverlay: {
     position: 'absolute',
