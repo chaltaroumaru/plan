@@ -1,6 +1,7 @@
 import { CHARACTERS } from '../data/characters';
 import { CHARACTER_CARDS } from '../data/cards';
 import { GachaPoolKind, GachaPullResult, PlayerProfile, Rarity } from '../types';
+import { createInitialProgress } from './leveling';
 
 export const SINGLE_PULL_COST = 5;
 export const TEN_PULL_COST = 50;
@@ -62,6 +63,7 @@ export function pullGacha(
     stones: profile.stones - cost,
     ownedCharacterCounts: { ...profile.ownedCharacterCounts },
     ownedCardCounts: { ...profile.ownedCardCounts },
+    characterProgress: { ...profile.characterProgress },
   };
 
   const pulls: GachaPullResult[] = [];
@@ -72,8 +74,12 @@ export function pullGacha(
     const counts = pool === 'character' ? working.ownedCharacterCounts : working.ownedCardCounts;
     const isNew = !counts[item.id];
     counts[item.id] = (counts[item.id] ?? 0) + 1;
-    if (pool === 'character' && !isNew) {
-      goldFromDupes += DUPE_GOLD[rarity];
+    if (pool === 'character') {
+      if (isNew) {
+        working.characterProgress[item.id] = createInitialProgress();
+      } else {
+        goldFromDupes += DUPE_GOLD[rarity];
+      }
     }
     pulls.push({ pool, id: item.id, rarity, isNew });
     pity = rarity === 'SSR' ? 0 : pity + 1;
@@ -90,13 +96,20 @@ export function pullGacha(
     const last = pulls[pulls.length - 1];
     const counts = pool === 'character' ? working.ownedCharacterCounts : working.ownedCardCounts;
     counts[last.id] -= 1;
-    if (counts[last.id] <= 0) delete counts[last.id];
+    if (counts[last.id] <= 0) {
+      delete counts[last.id];
+      if (pool === 'character') delete working.characterProgress[last.id];
+    }
 
     const guaranteed = pickOfRarity(pool, 'R');
     const isNew = !counts[guaranteed.id];
     counts[guaranteed.id] = (counts[guaranteed.id] ?? 0) + 1;
-    if (pool === 'character' && !isNew) {
-      goldFromDupes += DUPE_GOLD.R;
+    if (pool === 'character') {
+      if (isNew) {
+        working.characterProgress[guaranteed.id] = createInitialProgress();
+      } else {
+        goldFromDupes += DUPE_GOLD.R;
+      }
     }
     pulls[pulls.length - 1] = { pool, id: guaranteed.id, rarity: 'R', isNew };
   }
