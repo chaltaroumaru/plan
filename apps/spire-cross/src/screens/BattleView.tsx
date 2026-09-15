@@ -3,7 +3,7 @@ import { Modal, ScrollView, StyleSheet, Text, View, Pressable, Switch } from 're
 import { BattleCardInstance, BattlePartyState, CharacterDef, CharacterProgress, EnemyDef } from '../types';
 import { getCard } from '../data/cards';
 import { getCharacter } from '../data/characters';
-import { createBattleState, endTurn, playCard, useUltimate } from '../game/battleEngine';
+import { createBattleState, endTurn, playCard, useUltimate, HAND_SIZE } from '../game/battleEngine';
 import { useGame } from '../state/GameContext';
 import Bar from '../components/Bar';
 import CardView from '../components/CardView';
@@ -34,6 +34,16 @@ export default function BattleView({ stageLabel, partyMembers, deckCardIds, enem
   const [pendingActorUid, setPendingActorUid] = useState<string | null>(null);
   const [pendingUltimateActorUid, setPendingUltimateActorUid] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [bottomRowWidth, setBottomRowWidth] = useState(0);
+
+  const PILE_WIDTH = 34;
+  const ROW_GAP = 6;
+  const slotCount = Math.max(state.hand.length, HAND_SIZE);
+  const cardSlotWidth =
+    bottomRowWidth > 0
+      ? Math.max(Math.floor((bottomRowWidth - PILE_WIDTH * 2 - ROW_GAP * 2) / slotCount) - 4, 44)
+      : 64;
+  const cardSlotHeight = Math.max(Math.floor(cardSlotWidth * 1.35), 70);
 
   const mode: PendingMode = pendingUltimateActorUid
     ? 'pick-ultimate-target'
@@ -201,18 +211,13 @@ export default function BattleView({ stageLabel, partyMembers, deckCardIds, enem
         ⚡ {state.energy}/{state.maxEnergy}
       </Text>
 
-      <View style={styles.bottomRow}>
+      <View style={styles.bottomRow} onLayout={(e) => setBottomRowWidth(e.nativeEvent.layout.width)}>
         <View style={styles.pileBadge}>
           <Text style={styles.pileIcon}>🂠</Text>
           <Text style={styles.pileCount}>{state.drawPile.length}</Text>
         </View>
 
-        <ScrollView
-          horizontal
-          contentContainerStyle={styles.hand}
-          showsHorizontalScrollIndicator={false}
-          style={styles.handScroll}
-        >
+        <View style={styles.hand}>
           {state.hand.map((inst, idx) => {
             const card = getCard(inst.cardId);
             return (
@@ -223,10 +228,16 @@ export default function BattleView({ stageLabel, partyMembers, deckCardIds, enem
                 disabled={state.energy < card.cost || state.isOver}
                 selected={pendingCard?.uid === inst.uid}
                 onPress={() => handleCardTap(inst)}
+                style={{
+                  width: cardSlotWidth,
+                  minHeight: cardSlotHeight,
+                  padding: cardSlotWidth < 80 ? 5 : 8,
+                  marginHorizontal: 2,
+                }}
               />
             );
           })}
-        </ScrollView>
+        </View>
 
         <View style={styles.pileBadge}>
           <Text style={styles.pileIcon}>🗑️</Text>
@@ -287,7 +298,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   settingsIcon: { fontSize: 16 },
-  enemyRow: { paddingVertical: 4 },
+  enemyRow: { paddingVertical: 4, flexGrow: 1, minWidth: '100%', justifyContent: 'center' },
   enemyBox: {
     width: 100,
     backgroundColor: 'rgba(30,20,58,0.78)',
@@ -317,7 +328,7 @@ const styles = StyleSheet.create({
   },
   promptText: { color: '#f5b400', fontSize: 12, fontWeight: '700', flexShrink: 1 },
   cancelText: { color: '#e8452f', fontSize: 12, fontWeight: '700', marginLeft: 8 },
-  partyRow: { paddingVertical: 4 },
+  partyRow: { paddingVertical: 4, flexGrow: 1, minWidth: '100%', justifyContent: 'center' },
   charBox: {
     width: 96,
     backgroundColor: 'rgba(30,20,58,0.78)',
@@ -341,10 +352,15 @@ const styles = StyleSheet.create({
   ultimateText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   energyText: { color: '#9a9ab0', fontSize: 11, textAlign: 'center', marginVertical: 4 },
   bottomRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  handScroll: { flex: 1 },
-  hand: { paddingVertical: 4, alignItems: 'flex-end', paddingHorizontal: 4 },
+  hand: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingHorizontal: 2,
+  },
   pileBadge: {
-    width: 40,
+    width: 34,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(30,20,58,0.78)',

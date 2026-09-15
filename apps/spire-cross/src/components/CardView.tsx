@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { CardDef } from '../types';
 import { RARITY_COLOR } from '../data/characters';
 
@@ -10,6 +10,8 @@ interface Props {
   compact?: boolean;
   selected?: boolean;
   testID?: string;
+  /** 手札を画面幅に収めるためのサイズ上書きなど、呼び出し側から寸法を差し替えたい場合に使う */
+  style?: StyleProp<ViewStyle>;
 }
 
 const ELEMENT_ICON: Record<string, string> = {
@@ -34,7 +36,7 @@ const TYPE_ICON: Record<CardDef['type'], string> = {
   power: '✨',
 };
 
-export default function CardView({ card, onPress, disabled, compact, selected, testID }: Props) {
+export default function CardView({ card, onPress, disabled, compact, selected, testID, style }: Props) {
   return (
     <Pressable
       testID={testID}
@@ -46,6 +48,7 @@ export default function CardView({ card, onPress, disabled, compact, selected, t
         { borderColor: RARITY_COLOR[card.rarity] },
         disabled && styles.disabled,
         selected && styles.selected,
+        style,
       ]}
     >
       <View style={styles.costBadge}>
