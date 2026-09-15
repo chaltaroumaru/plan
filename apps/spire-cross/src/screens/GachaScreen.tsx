@@ -1,16 +1,41 @@
-import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Alert, Animated, Modal, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useGame } from '../state/GameContext';
 import { getCharacter, RARITY_COLOR } from '../data/characters';
 import { getCard } from '../data/cards';
 import { GachaPoolKind, GachaPullResult } from '../types';
 import { MULTI_PULL_COUNT, PITY_LIMIT, SINGLE_PULL_COST, TEN_PULL_COST, pullGacha } from '../game/gacha';
 
+const GLOW_COLOR: Record<'SSR' | 'SR' | 'normal', string> = {
+  SSR: '#ffd76a',
+  SR: '#b164e8',
+  normal: '#7c5cff',
+};
+
+const SUMMON_LABEL: Record<'SSR' | 'SR' | 'normal', string> = {
+  SSR: '眩い想いが共鳴している……!',
+  SR: '強い想いが共鳴している……',
+  normal: '交界石の記憶が共鳴している……',
+};
+
+function highestGlowKind(pulls: GachaPullResult[]): 'SSR' | 'SR' | 'normal' {
+  if (pulls.some((p) => p.rarity === 'SSR')) return 'SSR';
+  if (pulls.some((p) => p.rarity === 'SR')) return 'SR';
+  return 'normal';
+}
+
 export default function GachaScreen() {
   const { profile, updateProfile } = useGame();
   const [pool, setPool] = useState<GachaPoolKind>('character');
   const [results, setResults] = useState<GachaPullResult[] | null>(null);
+  const [summoning, setSummoning] = useState(false);
+  const [glowKind, setGlowKind] = useState<'SSR' | 'SR' | 'normal'>('normal');
+
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const flashAnim = useRef(new Animated.Value(0)).current;
+  const cardAnimsRef = useRef<Animated.Value[]>([]);
 
   const pity = pool === 'character' ? profile.charPity : profile.cardPity;
   const pityRemain = Math.max(0, PITY_LIMIT - pity);
@@ -23,13 +48,44 @@ export default function GachaScreen() {
     }
     const outcome = pullGacha(profile, pool, count);
     updateProfile(() => outcome.profile);
-    setResults(outcome.pulls);
+    setResults(null);
+    startSummonSequence(outcome.pulls);
+  };
+
+  const startSummonSequence = (pulls: GachaPullResult[]) => {
+    const kind = highestGlowKind(pulls);
+    setGlowKind(kind);
+    setSummoning(true);
+    pulseAnim.setValue(0);
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 520, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 520, useNativeDriver: true }),
+      ])
+    );
+    pulseLoop.start();
+
+    const summonDuration = kind === 'SSR' ? 1600 : kind === 'SR' ? 1300 : 1000;
+    setTimeout(() => {
+      pulseLoop.stop();
+      flashAnim.setValue(1);
+      setSummoning(false);
+      cardAnimsRef.current = pulls.map(() => new Animated.Value(0));
+      setResults(pulls);
+      Animated.timing(flashAnim, { toValue: 0, duration: 450, useNativeDriver: true }).start();
+      Animated.stagger(
+        80,
+        cardAnimsRef.current.map((v) => Animated.spring(v, { toValue: 1, friction: 6, useNativeDriver: true }))
+      ).start();
+    }, summonDuration);
   };
 
   const switchPool = (next: GachaPoolKind) => {
     setPool(next);
     setResults(null);
   };
+
+  const glowColor = GLOW_COLOR[glowKind];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -63,11 +119,15 @@ export default function GachaScreen() {
         </View>
 
         <View style={styles.btnRow}>
-          <Pressable style={styles.pullBtn} onPress={() => doPull(1)}>
+          <Pressable style={styles.pullBtn} onPress={() => doPull(1)} disabled={summoning}>
             <Text style={styles.pullBtnText}>1回引く</Text>
             <Text style={styles.pullBtnSub}>💎{SINGLE_PULL_COST}</Text>
           </Pressable>
-          <Pressable style={[styles.pullBtn, styles.pullBtnTen]} onPress={() => doPull(MULTI_PULL_COUNT)}>
+          <Pressable
+            style={[styles.pullBtn, styles.pullBtnTen]}
+            onPress={() => doPull(MULTI_PULL_COUNT)}
+            disabled={summoning}
+          >
             <Text style={styles.pullBtnText}>10+1連引く</Text>
             <Text style={styles.pullBtnSub}>💎{TEN_PULL_COST}</Text>
           </Pressable>
@@ -80,8 +140,23 @@ export default function GachaScreen() {
               {results.map((r, idx) => {
                 const emoji = r.pool === 'character' ? getCharacter(r.id)?.emoji : '🎴';
                 const name = r.pool === 'character' ? getCharacter(r.id)?.name : getCard(r.id).name;
+                const anim = cardAnimsRef.current[idx] ?? new Animated.Value(1);
                 return (
-                  <View key={idx} style={[styles.resultTile, { borderColor: RARITY_COLOR[r.rarity] }]}>
+                  <Animated.View
+                    key={idx}
+                    testID={`gacha-result-${idx}`}
+                    style={[
+                      styles.resultTile,
+                      { borderColor: RARITY_COLOR[r.rarity] },
+                      {
+                        opacity: anim,
+                        transform: [
+                          { scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) },
+                          { translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
+                        ],
+                      },
+                    ]}
+                  >
                     <Text style={styles.resultEmoji}>{emoji}</Text>
                     <View style={[styles.rarityBadge, { backgroundColor: RARITY_COLOR[r.rarity] }]}>
                       <Text style={styles.rarityBadgeText}>{r.rarity}</Text>
@@ -96,13 +171,41 @@ export default function GachaScreen() {
                         {r.pool === 'character' ? '重複→ゴールド' : '所持数+1'}
                       </Text>
                     )}
-                  </View>
+                  </Animated.View>
                 );
               })}
             </View>
           </View>
         )}
       </ScrollView>
+
+      <Modal visible={summoning} transparent animationType="fade">
+        <View style={styles.summonOverlay}>
+          <Animated.View
+            style={{
+              opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }),
+              transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.18] }) }],
+            }}
+          >
+            <Svg width={220} height={220}>
+              <Defs>
+                <RadialGradient id="summonGlow" cx="50%" cy="50%" r="50%">
+                  <Stop offset="0" stopColor={glowColor} stopOpacity={0.95} />
+                  <Stop offset="0.55" stopColor={glowColor} stopOpacity={0.4} />
+                  <Stop offset="1" stopColor={glowColor} stopOpacity={0} />
+                </RadialGradient>
+              </Defs>
+              <Circle cx={110} cy={110} r={110} fill="url(#summonGlow)" />
+            </Svg>
+          </Animated.View>
+          <Text style={[styles.summonText, { color: glowColor }]}>{SUMMON_LABEL[glowKind]}</Text>
+        </View>
+      </Modal>
+
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.flashOverlay, { opacity: flashAnim, backgroundColor: glowColor }]}
+      />
     </SafeAreaView>
   );
 }
@@ -163,4 +266,18 @@ const styles = StyleSheet.create({
   resultName: { color: '#fff', fontSize: 11, fontWeight: '700', marginTop: 4 },
   newTag: { color: '#f5b400', fontSize: 10, fontWeight: '800', marginTop: 2 },
   dupeTag: { color: '#9a9ab0', fontSize: 9, marginTop: 2 },
+  summonOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(6,4,16,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  summonText: { fontSize: 14, fontWeight: '800', marginTop: 20 },
+  flashOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
 });
