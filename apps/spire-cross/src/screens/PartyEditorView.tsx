@@ -47,9 +47,9 @@ export default function PartyEditorView({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12121a' },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   container: { padding: 16, paddingBottom: 48 },
-  backLink: { color: '#3f8efc', fontSize: 13, marginBottom: 12 },
+  backLink: { color: '#7c5cff', fontSize: 13, marginBottom: 12 },
   title: { color: '#fff', fontSize: 18, fontWeight: '800' },
   helpText: { color: '#9a9ab0', fontSize: 12, marginTop: 4, marginBottom: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },

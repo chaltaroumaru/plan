@@ -2,8 +2,9 @@ import { CHARACTERS } from '../data/characters';
 import { CHARACTER_CARDS } from '../data/cards';
 import { GachaPoolKind, GachaPullResult, PlayerProfile, Rarity } from '../types';
 
-export const SINGLE_PULL_COST = 150;
-export const TEN_PULL_COST = 1350;
+export const SINGLE_PULL_COST = 100;
+export const TEN_PULL_COST = 1000;
+export const MULTI_PULL_COUNT = 11; // 10連+1のおまけ枠
 export const PITY_LIMIT = 60;
 
 const BASE_RATES: Record<Rarity, number> = {
@@ -46,7 +47,11 @@ export interface GachaOutcome {
   goldFromDupes: number;
 }
 
-export function pullGacha(profile: PlayerProfile, pool: GachaPoolKind, count: 1 | 10): GachaOutcome {
+export function pullGacha(
+  profile: PlayerProfile,
+  pool: GachaPoolKind,
+  count: 1 | typeof MULTI_PULL_COUNT
+): GachaOutcome {
   const cost = count === 1 ? SINGLE_PULL_COST : TEN_PULL_COST;
   if (profile.stones < cost) {
     throw new Error('交界石が足りません');
@@ -80,8 +85,8 @@ export function pullGacha(profile: PlayerProfile, pool: GachaPoolKind, count: 1 
     applyPull(rarity, item);
   }
 
-  // 10連保証: R以上が1体もいなければ最後の1体をRに差し替える
-  if (count === 10 && pulls.every((p) => p.rarity === 'N')) {
+  // 10+1連保証: R以上が1体もいなければ最後の1体をRに差し替える
+  if (count === MULTI_PULL_COUNT && pulls.every((p) => p.rarity === 'N')) {
     const last = pulls[pulls.length - 1];
     const counts = pool === 'character' ? working.ownedCharacterCounts : working.ownedCardCounts;
     counts[last.id] -= 1;

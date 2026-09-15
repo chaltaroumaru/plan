@@ -45,10 +45,10 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12121a' },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   container: { padding: 16, paddingBottom: 48 },
   title: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 16 },
-  section: { backgroundColor: '#1c1c26', borderRadius: 12, padding: 14, marginBottom: 16 },
+  section: { backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 12, padding: 14, marginBottom: 16 },
   sectionTitle: { color: '#fff', fontWeight: '700', fontSize: 14, marginBottom: 8 },
   infoText: { color: '#9a9ab0', fontSize: 12, marginBottom: 4 },
   dangerBtn: { backgroundColor: '#e8452f', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },

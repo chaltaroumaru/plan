@@ -87,7 +87,7 @@ export default function DungeonScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>ダンジョン</Text>
-        <Bar value={ap.current} max={AP_MAX} color="#3f8efc" height={12} />
+        <Bar value={ap.current} max={AP_MAX} color="#7c5cff" height={12} />
         <Text style={styles.apText}>
           AP {ap.current}/{AP_MAX} {ap.current < AP_MAX ? `(次の回復まで約${minutesLeft}分)` : ''}
         </Text>
@@ -130,11 +130,11 @@ export default function DungeonScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12121a' },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: 16, paddingTop: 8 },
   title: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 8 },
   apText: { color: '#9a9ab0', fontSize: 11, marginTop: 4, marginBottom: 4 },
-  resultBox: { marginHorizontal: 16, backgroundColor: '#1c1c26', borderRadius: 10, padding: 10, marginTop: 4 },
+  resultBox: { marginHorizontal: 16, backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 10, padding: 10, marginTop: 4 },
   resultText: { color: '#f5b400', fontSize: 12, fontWeight: '700' },
   container: { padding: 16, paddingBottom: 48 },
   categoryBlock: { marginBottom: 18 },
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1c1c26',
+    backgroundColor: 'rgba(30,20,58,0.78)',
     borderRadius: 10,
     padding: 12,
     marginBottom: 8,
@@ -151,6 +151,6 @@ const styles = StyleSheet.create({
   stageInfo: { flexShrink: 1 },
   stageName: { color: '#fff', fontWeight: '700', fontSize: 13 },
   stageReward: { color: '#9a9ab0', fontSize: 11, marginTop: 3 },
-  apCostBadge: { backgroundColor: '#3f8efc', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  apCostBadge: { backgroundColor: '#7c5cff', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
   apCostText: { color: '#fff', fontWeight: '700', fontSize: 11 },
 });

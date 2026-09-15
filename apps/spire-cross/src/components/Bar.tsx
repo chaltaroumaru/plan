@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
   track: {
     width: '100%',
     borderRadius: 8,
-    backgroundColor: '#2a2a35',
+    backgroundColor: 'rgba(124,92,255,0.28)',
     overflow: 'hidden',
     justifyContent: 'center',
   },

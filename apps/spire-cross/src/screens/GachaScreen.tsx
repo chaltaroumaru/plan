@@ -5,7 +5,7 @@ import { useGame } from '../state/GameContext';
 import { getCharacter, RARITY_COLOR } from '../data/characters';
 import { getCard } from '../data/cards';
 import { GachaPoolKind, GachaPullResult } from '../types';
-import { PITY_LIMIT, SINGLE_PULL_COST, TEN_PULL_COST, pullGacha } from '../game/gacha';
+import { MULTI_PULL_COUNT, PITY_LIMIT, SINGLE_PULL_COST, TEN_PULL_COST, pullGacha } from '../game/gacha';
 
 export default function GachaScreen() {
   const { profile, updateProfile } = useGame();
@@ -15,7 +15,7 @@ export default function GachaScreen() {
   const pity = pool === 'character' ? profile.charPity : profile.cardPity;
   const pityRemain = Math.max(0, PITY_LIMIT - pity);
 
-  const doPull = (count: 1 | 10) => {
+  const doPull = (count: 1 | typeof MULTI_PULL_COUNT) => {
     const cost = count === 1 ? SINGLE_PULL_COST : TEN_PULL_COST;
     if (profile.stones < cost) {
       Alert.alert('交界石が足りません', `${cost}個必要です。`);
@@ -59,7 +59,7 @@ export default function GachaScreen() {
         <View style={styles.rateBox}>
           <Text style={styles.rateText}>排出率  SSR 3% / SR 12% / R 35% / N 50%</Text>
           <Text style={styles.rateText}>天井まであと{pityRemain}回で SSR 確定</Text>
-          <Text style={styles.rateText}>10連は R 以上が1件確定</Text>
+          <Text style={styles.rateText}>10+1連は R 以上が1件確定</Text>
         </View>
 
         <View style={styles.btnRow}>
@@ -67,8 +67,8 @@ export default function GachaScreen() {
             <Text style={styles.pullBtnText}>1回引く</Text>
             <Text style={styles.pullBtnSub}>💎{SINGLE_PULL_COST}</Text>
           </Pressable>
-          <Pressable style={[styles.pullBtn, styles.pullBtnTen]} onPress={() => doPull(10)}>
-            <Text style={styles.pullBtnText}>10連引く</Text>
+          <Pressable style={[styles.pullBtn, styles.pullBtnTen]} onPress={() => doPull(MULTI_PULL_COUNT)}>
+            <Text style={styles.pullBtnText}>10+1連引く</Text>
             <Text style={styles.pullBtnSub}>💎{TEN_PULL_COST}</Text>
           </Pressable>
         </View>
@@ -108,12 +108,12 @@ export default function GachaScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12121a' },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   container: { padding: 16, paddingBottom: 48 },
   title: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 8 },
   walletChip: {
     alignSelf: 'flex-start',
-    backgroundColor: '#1c1c26',
+    backgroundColor: 'rgba(30,20,58,0.78)',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -121,16 +121,16 @@ const styles = StyleSheet.create({
   },
   walletText: { color: '#fff', fontWeight: '700' },
   tabRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  tabBtn: { flex: 1, backgroundColor: '#1c1c26', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
-  tabBtnActive: { backgroundColor: '#3f8efc' },
+  tabBtn: { flex: 1, backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  tabBtnActive: { backgroundColor: '#7c5cff' },
   tabText: { color: '#9a9ab0', fontWeight: '700', fontSize: 13 },
   tabTextActive: { color: '#fff' },
-  rateBox: { backgroundColor: '#1c1c26', borderRadius: 12, padding: 12, marginBottom: 16 },
+  rateBox: { backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 12, padding: 12, marginBottom: 16 },
   rateText: { color: '#c4c4d4', fontSize: 12, marginBottom: 2 },
   btnRow: { flexDirection: 'row', gap: 12 },
   pullBtn: {
     flex: 1,
-    backgroundColor: '#3f8efc',
+    backgroundColor: '#7c5cff',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     width: 96,
     borderRadius: 12,
     borderWidth: 2,
-    backgroundColor: '#1c1c26',
+    backgroundColor: 'rgba(30,20,58,0.78)',
     padding: 8,
     alignItems: 'center',
     margin: 4,

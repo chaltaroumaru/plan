@@ -4,7 +4,7 @@ export const RARITY_ORDER: Rarity[] = ['N', 'R', 'SR', 'SSR'];
 
 export const RARITY_COLOR: Record<Rarity, string> = {
   N: '#8a8f98',
-  R: '#3f8efc',
+  R: '#4fa3e3',
   SR: '#b164e8',
   SSR: '#f5b400',
 };

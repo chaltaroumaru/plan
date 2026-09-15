@@ -70,12 +70,12 @@ export default function CharactersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12121a' },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   container: { padding: 16, paddingBottom: 48 },
   title: { fontSize: 22, fontWeight: '800', color: '#fff' },
   subtitle: { color: '#9a9ab0', marginTop: 4, marginBottom: 12 },
   actionRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  actionBtn: { flex: 1, backgroundColor: '#1c1c26', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  actionBtn: { flex: 1, backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   actionBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
 });

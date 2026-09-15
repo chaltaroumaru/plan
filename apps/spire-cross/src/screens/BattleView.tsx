@@ -217,11 +217,11 @@ export default function BattleView({ partyMembers, deckCardIds, enemyDefs, onFin
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12121a', padding: 10 },
+  container: { flex: 1, backgroundColor: 'transparent', padding: 10 },
   enemyRow: { paddingVertical: 4 },
   enemyBox: {
     width: 100,
-    backgroundColor: '#1c1c26',
+    backgroundColor: 'rgba(30,20,58,0.78)',
     borderRadius: 10,
     padding: 8,
     marginRight: 8,
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   enemyName: { color: '#fff', fontSize: 11, fontWeight: '700', marginTop: 2 },
   hpText: { color: '#c4c4d4', fontSize: 10, marginTop: 2 },
   intentText: { color: '#f2d06b', fontSize: 10, fontWeight: '700', marginTop: 2 },
-  logBox: { maxHeight: 60, backgroundColor: '#1c1c26', borderRadius: 8, marginVertical: 6 },
+  logBox: { maxHeight: 60, backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 8, marginVertical: 6 },
   logLine: { color: '#9a9ab0', fontSize: 11, marginBottom: 2 },
   promptBox: {
     backgroundColor: '#2a2a1a',
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   partyRow: { paddingVertical: 4 },
   charBox: {
     width: 96,
-    backgroundColor: '#1c1c26',
+    backgroundColor: 'rgba(30,20,58,0.78)',
     borderRadius: 10,
     padding: 8,
     marginRight: 8,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   ultimateText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   energyText: { color: '#9a9ab0', fontSize: 11, textAlign: 'center', marginVertical: 4 },
   hand: { paddingVertical: 4, alignItems: 'flex-end' },
-  endTurnBtn: { backgroundColor: '#3f8efc', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  endTurnBtn: { backgroundColor: '#7c5cff', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   endTurnText: { color: '#fff', fontWeight: '800' },
   overlay: {
     position: 'absolute',

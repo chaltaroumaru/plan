@@ -118,14 +118,14 @@ export default function StoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12121a' },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: 16, paddingTop: 8 },
   title: { fontSize: 22, fontWeight: '800', color: '#fff' },
   subtitle: { color: '#9a9ab0', fontSize: 12, marginTop: 4, marginBottom: 4 },
-  resultBox: { marginHorizontal: 16, backgroundColor: '#1c1c26', borderRadius: 10, padding: 10, marginTop: 4 },
+  resultBox: { marginHorizontal: 16, backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 10, padding: 10, marginTop: 4 },
   resultText: { color: '#f5b400', fontSize: 12, fontWeight: '700' },
   container: { padding: 16, paddingBottom: 48 },
-  stageCard: { backgroundColor: '#1c1c26', borderRadius: 12, padding: 14, marginBottom: 10 },
+  stageCard: { backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 12, padding: 14, marginBottom: 10 },
   locked: { opacity: 0.4 },
   stageHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   stageTitle: { color: '#fff', fontWeight: '800', fontSize: 14 },

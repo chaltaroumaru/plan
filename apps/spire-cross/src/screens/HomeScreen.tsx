@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Modal, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGame } from '../state/GameContext';
-import { getCharacter } from '../data/characters';
 import { AP_MAX } from '../data/economy';
 import { recoverAp } from '../game/ap';
 import Bar from '../components/Bar';
@@ -23,6 +22,8 @@ const NAV_ITEMS: { key: string; label: string; emoji: string }[] = [
 export default function HomeScreen({ navigation }: any) {
   const { profile } = useGame();
   const ap = useMemo(() => recoverAp(profile.ap), [profile.ap]);
+  const [showAnnouncements, setShowAnnouncements] = useState(false);
+  const [showMissions, setShowMissions] = useState(false);
 
   const partyLevels = profile.partyIds
     .map((id) => profile.characterProgress[id]?.level)
@@ -35,101 +36,214 @@ export default function HomeScreen({ navigation }: any) {
     { id: 'm2', label: 'パーティを編成する', done: profile.partyIds.length > 0 },
     { id: 'm3', label: 'ストーリー第1章を1つクリアする', done: profile.clearedStoryStageIds.length > 0 },
   ];
+  const missionsRemaining = missions.filter((m) => !m.done).length;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>スパイア・クロス</Text>
 
-        <View style={styles.announceBox}>
-          {ANNOUNCEMENTS.map((a) => (
-            <View key={a.id} style={styles.announceItem}>
-              <Text style={styles.announceTitle}>📢 {a.title}</Text>
-              <Text style={styles.announceBody}>{a.body}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.playerBox}>
-          <Text style={styles.playerText}>パーティ平均Lv {avgLevel} ・ 所持キャラ {Object.keys(profile.ownedCharacterCounts).length}体</Text>
-          <Bar value={ap.current} max={AP_MAX} color="#3f8efc" height={10} />
-          <Text style={styles.apText}>
-            AP {ap.current}/{AP_MAX}
-          </Text>
-        </View>
-
-        <View style={styles.walletRow}>
-          <View style={styles.walletChip}>
-            <Text style={styles.walletEmoji}>💰</Text>
-            <Text style={styles.walletText}>{profile.gold}</Text>
+        {/* ヘッダー: 左上=プレイヤー情報 / 右上=通貨・お知らせ・ミッション */}
+        <View style={styles.headerRow}>
+          <View style={styles.playerBox}>
+            <Text style={styles.playerLabel}>プレイヤー情報</Text>
+            <Text style={styles.playerText}>パーティ平均 Lv{avgLevel}</Text>
+            <Text style={styles.playerSubText}>
+              所持キャラ {Object.keys(profile.ownedCharacterCounts).length}体
+            </Text>
+            <Bar value={ap.current} max={AP_MAX} color="#7c5cff" height={8} />
+            <Text style={styles.apText}>
+              AP {ap.current}/{AP_MAX}
+            </Text>
           </View>
-          <View style={styles.walletChip}>
-            <Text style={styles.walletEmoji}>💎</Text>
-            <Text style={styles.walletText}>{profile.stones}</Text>
-          </View>
-        </View>
 
-        <Text style={styles.sectionTitle}>ミッション</Text>
-        <View style={styles.missionBox}>
-          {missions.map((m) => (
-            <View key={m.id} style={styles.missionRow}>
-              <Text style={styles.missionCheck}>{m.done ? '✅' : '⬜'}</Text>
-              <Text style={[styles.missionText, m.done && styles.missionTextDone]}>{m.label}</Text>
+          <View style={styles.rightCol}>
+            <View style={styles.walletRow}>
+              <View style={styles.walletChip}>
+                <Text style={styles.walletEmoji}>💰</Text>
+                <Text style={styles.walletText}>{profile.gold}</Text>
+              </View>
+              <View style={styles.walletChip}>
+                <Text style={styles.walletEmoji}>💎</Text>
+                <Text style={styles.walletText}>{profile.stones}</Text>
+              </View>
             </View>
-          ))}
+            <Pressable style={styles.iconRow} onPress={() => setShowAnnouncements(true)}>
+              <Text style={styles.iconRowEmoji}>📢</Text>
+              <Text style={styles.iconRowLabel}>お知らせ</Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{ANNOUNCEMENTS.length}</Text>
+              </View>
+            </Pressable>
+            <Pressable style={styles.iconRow} onPress={() => setShowMissions(true)}>
+              <Text style={styles.iconRowEmoji}>📋</Text>
+              <Text style={styles.iconRowLabel}>ミッション</Text>
+              {missionsRemaining > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{missionsRemaining}</Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
         </View>
 
         <Text style={styles.sectionTitle}>メニュー</Text>
-        <View style={styles.navGrid}>
-          {NAV_ITEMS.map((item) => (
-            <Pressable key={item.key} style={styles.navCard} onPress={() => navigation.navigate(item.key)}>
+        <View style={styles.zigzagWrap}>
+          <View style={styles.zigzagLine} pointerEvents="none" />
+          {NAV_ITEMS.map((item, idx) => (
+            <Pressable
+              key={item.key}
+              style={[styles.navCard, idx % 2 === 0 ? styles.navCardLeft : styles.navCardRight]}
+              onPress={() => navigation.navigate(item.key)}
+            >
               <Text style={styles.navEmoji}>{item.emoji}</Text>
               <Text style={styles.navLabel}>{item.label}</Text>
             </Pressable>
           ))}
         </View>
       </ScrollView>
+
+      <Modal visible={showAnnouncements} transparent animationType="fade" onRequestClose={() => setShowAnnouncements(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowAnnouncements(false)}>
+          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>お知らせ</Text>
+            {ANNOUNCEMENTS.map((a) => (
+              <View key={a.id} style={styles.announceItem}>
+                <Text style={styles.announceTitle}>📢 {a.title}</Text>
+                <Text style={styles.announceBody}>{a.body}</Text>
+              </View>
+            ))}
+            <Pressable style={styles.modalCloseBtn} onPress={() => setShowAnnouncements(false)}>
+              <Text style={styles.modalCloseBtnText}>閉じる</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={showMissions} transparent animationType="fade" onRequestClose={() => setShowMissions(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowMissions(false)}>
+          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>ミッション</Text>
+            {missions.map((m) => (
+              <View key={m.id} style={styles.missionRow}>
+                <Text style={styles.missionCheck}>{m.done ? '✅' : '⬜'}</Text>
+                <Text style={[styles.missionText, m.done && styles.missionTextDone]}>{m.label}</Text>
+              </View>
+            ))}
+            <Pressable style={styles.modalCloseBtn} onPress={() => setShowMissions(false)}>
+              <Text style={styles.modalCloseBtnText}>閉じる</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12121a' },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   container: { padding: 16, paddingBottom: 48 },
   title: { fontSize: 26, fontWeight: '800', color: '#fff', marginBottom: 12 },
-  announceBox: { backgroundColor: '#1c1c26', borderRadius: 12, padding: 12, marginBottom: 12 },
-  announceItem: { marginBottom: 8 },
-  announceTitle: { color: '#f5b400', fontWeight: '700', fontSize: 12 },
-  announceBody: { color: '#c4c4d4', fontSize: 11, marginTop: 2 },
-  playerBox: { backgroundColor: '#1c1c26', borderRadius: 12, padding: 12, marginBottom: 12 },
-  playerText: { color: '#fff', fontSize: 12, fontWeight: '600', marginBottom: 8 },
-  apText: { color: '#9a9ab0', fontSize: 11, marginTop: 4 },
-  walletRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  headerRow: { flexDirection: 'row', gap: 10, marginBottom: 16, alignItems: 'flex-start' },
+  playerBox: {
+    flex: 1.1,
+    backgroundColor: 'rgba(30,20,58,0.78)',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(124,92,255,0.28)',
+  },
+  playerLabel: { color: '#c9b8ff', fontSize: 10, fontWeight: '700', marginBottom: 4 },
+  playerText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  playerSubText: { color: '#9a90b8', fontSize: 11, marginTop: 2, marginBottom: 8 },
+  apText: { color: '#9a90b8', fontSize: 10, marginTop: 4 },
+  rightCol: { flex: 1, gap: 6 },
+  walletRow: { flexDirection: 'row', gap: 6 },
   walletChip: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1c1c26',
-    borderRadius: 20,
-    paddingHorizontal: 12,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(30,20,58,0.78)',
+    borderRadius: 16,
+    paddingHorizontal: 8,
     paddingVertical: 6,
     gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(124,92,255,0.28)',
   },
-  walletEmoji: { fontSize: 14 },
-  walletText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  walletEmoji: { fontSize: 13 },
+  walletText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+  iconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(30,20,58,0.78)',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(124,92,255,0.28)',
+  },
+  iconRowEmoji: { fontSize: 13 },
+  iconRowLabel: { color: '#fff', fontSize: 11, fontWeight: '700', flex: 1 },
+  badge: {
+    backgroundColor: '#f5b400',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: { color: '#1b1040', fontSize: 9, fontWeight: '800' },
   sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 8, marginBottom: 8 },
-  missionBox: { backgroundColor: '#1c1c26', borderRadius: 12, padding: 12, marginBottom: 8 },
-  missionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  zigzagWrap: { position: 'relative', paddingVertical: 4 },
+  zigzagLine: {
+    position: 'absolute',
+    left: '50%',
+    top: 10,
+    bottom: 10,
+    width: 0,
+    borderLeftWidth: 2,
+    borderLeftColor: 'rgba(124,92,255,0.3)',
+    borderStyle: 'dashed',
+  },
+  navCard: {
+    width: '58%',
+    backgroundColor: 'rgba(30,20,58,0.85)',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(124,92,255,0.35)',
+  },
+  navCardLeft: { alignSelf: 'flex-start' },
+  navCardRight: { alignSelf: 'flex-end' },
+  navEmoji: { fontSize: 24 },
+  navLabel: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(5,3,15,0.75)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  modalCard: {
+    backgroundColor: '#1b1330',
+    borderRadius: 16,
+    padding: 18,
+    width: '100%',
+    maxWidth: 360,
+    borderWidth: 1,
+    borderColor: 'rgba(124,92,255,0.35)',
+  },
+  modalTitle: { color: '#fff', fontSize: 16, fontWeight: '800', marginBottom: 10 },
+  announceItem: { marginBottom: 10 },
+  announceTitle: { color: '#f5b400', fontWeight: '700', fontSize: 12 },
+  announceBody: { color: '#c4c4d4', fontSize: 11, marginTop: 2 },
+  missionRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   missionCheck: { fontSize: 14, marginRight: 8 },
   missionText: { color: '#c4c4d4', fontSize: 12 },
   missionTextDone: { color: '#5fae6b', textDecorationLine: 'line-through' },
-  navGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  navCard: {
-    width: '30%',
-    backgroundColor: '#1c1c26',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  navEmoji: { fontSize: 26, marginBottom: 4 },
-  navLabel: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  modalCloseBtn: { marginTop: 8, backgroundColor: '#7c5cff', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  modalCloseBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 });

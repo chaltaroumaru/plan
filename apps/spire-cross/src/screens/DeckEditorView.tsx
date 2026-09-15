@@ -84,9 +84,9 @@ export default function DeckEditorView({ onBack }: { onBack: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#12121a' },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   container: { padding: 16, paddingBottom: 48 },
-  backLink: { color: '#3f8efc', fontSize: 13, marginBottom: 12 },
+  backLink: { color: '#7c5cff', fontSize: 13, marginBottom: 12 },
   title: { color: '#fff', fontSize: 18, fontWeight: '800' },
   sizeText: { color: '#5fae6b', fontSize: 12, marginTop: 6, fontWeight: '700' },
   sizeTextInvalid: { color: '#e8452f' },
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1c1c26',
+    backgroundColor: 'rgba(30,20,58,0.78)',
     borderRadius: 10,
     borderWidth: 1,
     padding: 10,
@@ -109,11 +109,11 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#3f8efc',
+    backgroundColor: '#7c5cff',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countBtnDisabled: { backgroundColor: '#2a2a35' },
+  countBtnDisabled: { backgroundColor: 'rgba(124,92,255,0.28)' },
   countBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   countText: { color: '#fff', fontSize: 12, fontWeight: '700', minWidth: 34, textAlign: 'center' },
 });
