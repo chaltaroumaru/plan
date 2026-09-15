@@ -73,8 +73,11 @@ export default function DungeonScreen() {
   };
 
   if (activeStage) {
+    const stageIndex =
+      DUNGEON_STAGES.filter((s) => s.category === activeStage.category).findIndex((s) => s.id === activeStage.id) + 1;
     return (
       <BattleView
+        stageLabel={`${DUNGEON_CATEGORY_LABEL[activeStage.category]} ${stageIndex}`}
         partyMembers={partyMembers}
         deckCardIds={profile.deckCardIds}
         enemyDefs={activeStage.enemyIds.map((id) => getEnemy(id))}

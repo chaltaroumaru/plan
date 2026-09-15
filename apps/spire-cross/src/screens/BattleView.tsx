@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, View, Pressable, Switch } from 'react-native';
 import { BattleCardInstance, BattlePartyState, CharacterDef, CharacterProgress, EnemyDef } from '../types';
 import { getCard } from '../data/cards';
 import { getCharacter } from '../data/characters';
 import { createBattleState, endTurn, playCard, useUltimate } from '../game/battleEngine';
+import { useGame } from '../state/GameContext';
 import Bar from '../components/Bar';
 import CardView from '../components/CardView';
 
 interface Props {
+  stageLabel: string;
   partyMembers: { character: CharacterDef; progress: CharacterProgress }[];
   deckCardIds: string[];
   enemyDefs: EnemyDef[];
@@ -22,7 +24,8 @@ const INTENT_LABEL: Record<string, string> = {
 
 type PendingMode = 'none' | 'pick-actor' | 'pick-target' | 'pick-ultimate-target';
 
-export default function BattleView({ partyMembers, deckCardIds, enemyDefs, onFinished }: Props) {
+export default function BattleView({ stageLabel, partyMembers, deckCardIds, enemyDefs, onFinished }: Props) {
+  const { profile, updateProfile } = useGame();
   const enemyDefMap = Object.fromEntries(enemyDefs.map((e) => [e.id, e]));
   const [state, setState] = useState<BattlePartyState>(() =>
     createBattleState(partyMembers, deckCardIds, enemyDefs)
@@ -30,6 +33,7 @@ export default function BattleView({ partyMembers, deckCardIds, enemyDefs, onFin
   const [pendingCard, setPendingCard] = useState<BattleCardInstance | null>(null);
   const [pendingActorUid, setPendingActorUid] = useState<string | null>(null);
   const [pendingUltimateActorUid, setPendingUltimateActorUid] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const mode: PendingMode = pendingUltimateActorUid
     ? 'pick-ultimate-target'
@@ -88,6 +92,20 @@ export default function BattleView({ partyMembers, deckCardIds, enemyDefs, onFin
 
   return (
     <View style={styles.container}>
+      <View style={styles.topBar}>
+        <View style={styles.topBarSide}>
+          <Text style={styles.stageLabelText}>{stageLabel}</Text>
+        </View>
+        <View style={styles.topBarCenter}>
+          <Text style={styles.turnLabelText}>ターン {state.turn}</Text>
+        </View>
+        <View style={[styles.topBarSide, styles.topBarSideRight]}>
+          <Pressable testID="battle-settings-btn" style={styles.settingsBtn} onPress={() => setSettingsOpen(true)}>
+            <Text style={styles.settingsIcon}>⚙️</Text>
+          </Pressable>
+        </View>
+      </View>
+
       <ScrollView contentContainerStyle={styles.enemyRow} horizontal showsHorizontalScrollIndicator={false}>
         {state.enemies.map((enemy, idx) => {
           const def = enemyDefMap[enemy.enemyId];
@@ -180,25 +198,41 @@ export default function BattleView({ partyMembers, deckCardIds, enemyDefs, onFin
       </ScrollView>
 
       <Text style={styles.energyText}>
-        ⚡ {state.energy}/{state.maxEnergy} ・ 山札{state.drawPile.length} ・ 捨札{state.discardPile.length} ・
-        ターン{state.turn}
+        ⚡ {state.energy}/{state.maxEnergy}
       </Text>
 
-      <ScrollView horizontal contentContainerStyle={styles.hand} showsHorizontalScrollIndicator={false}>
-        {state.hand.map((inst, idx) => {
-          const card = getCard(inst.cardId);
-          return (
-            <CardView
-              key={inst.uid}
-              testID={`hand-card-${idx}`}
-              card={card}
-              disabled={state.energy < card.cost || state.isOver}
-              selected={pendingCard?.uid === inst.uid}
-              onPress={() => handleCardTap(inst)}
-            />
-          );
-        })}
-      </ScrollView>
+      <View style={styles.bottomRow}>
+        <View style={styles.pileBadge}>
+          <Text style={styles.pileIcon}>🂠</Text>
+          <Text style={styles.pileCount}>{state.drawPile.length}</Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          contentContainerStyle={styles.hand}
+          showsHorizontalScrollIndicator={false}
+          style={styles.handScroll}
+        >
+          {state.hand.map((inst, idx) => {
+            const card = getCard(inst.cardId);
+            return (
+              <CardView
+                key={inst.uid}
+                testID={`hand-card-${idx}`}
+                card={card}
+                disabled={state.energy < card.cost || state.isOver}
+                selected={pendingCard?.uid === inst.uid}
+                onPress={() => handleCardTap(inst)}
+              />
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.pileBadge}>
+          <Text style={styles.pileIcon}>🗑️</Text>
+          <Text style={styles.pileCount}>{state.discardPile.length}</Text>
+        </View>
+      </View>
 
       <Pressable style={styles.endTurnBtn} onPress={handleEndTurn} disabled={state.isOver}>
         <Text style={styles.endTurnText}>ターン終了</Text>
@@ -212,12 +246,47 @@ export default function BattleView({ partyMembers, deckCardIds, enemyDefs, onFin
           </Pressable>
         </View>
       )}
+
+      <Modal visible={settingsOpen} animationType="fade" transparent onRequestClose={() => setSettingsOpen(false)}>
+        <Pressable style={styles.settingsOverlay} onPress={() => setSettingsOpen(false)}>
+          <Pressable style={styles.settingsSheet} onPress={() => {}}>
+            <Text style={styles.settingsTitle}>バトル設定</Text>
+            <View style={styles.settingsRow}>
+              <Text style={styles.settingsLabel}>効果音(SE)</Text>
+              <Switch
+                value={profile.settings.seOn}
+                onValueChange={(v) => updateProfile((prev) => ({ ...prev, settings: { ...prev.settings, seOn: v } }))}
+                trackColor={{ false: '#3a3350', true: '#7c5cff' }}
+                thumbColor="#fff"
+              />
+            </View>
+            <Pressable style={styles.settingsCloseBtn} onPress={() => setSettingsOpen(false)}>
+              <Text style={styles.settingsCloseText}>閉じる</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent', padding: 10 },
+  topBar: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  topBarSide: { flex: 1, alignItems: 'flex-start' },
+  topBarSideRight: { alignItems: 'flex-end' },
+  topBarCenter: { flex: 1, alignItems: 'center' },
+  stageLabelText: { color: '#c9b8ff', fontSize: 13, fontWeight: '800' },
+  turnLabelText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  settingsBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(30,20,58,0.78)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsIcon: { fontSize: 16 },
   enemyRow: { paddingVertical: 4 },
   enemyBox: {
     width: 100,
@@ -271,8 +340,20 @@ const styles = StyleSheet.create({
   ultimateReady: { backgroundColor: '#e8452f' },
   ultimateText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   energyText: { color: '#9a9ab0', fontSize: 11, textAlign: 'center', marginVertical: 4 },
-  hand: { paddingVertical: 4, alignItems: 'flex-end' },
-  endTurnBtn: { backgroundColor: '#7c5cff', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  bottomRow: { flexDirection: 'row', alignItems: 'flex-end' },
+  handScroll: { flex: 1 },
+  hand: { paddingVertical: 4, alignItems: 'flex-end', paddingHorizontal: 4 },
+  pileBadge: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(30,20,58,0.78)',
+    borderRadius: 10,
+    paddingVertical: 8,
+  },
+  pileIcon: { fontSize: 14 },
+  pileCount: { color: '#fff', fontSize: 13, fontWeight: '800', marginTop: 2 },
+  endTurnBtn: { backgroundColor: '#7c5cff', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 8 },
   endTurnText: { color: '#fff', fontWeight: '800' },
   overlay: {
     position: 'absolute',
@@ -287,4 +368,11 @@ const styles = StyleSheet.create({
   overlayTitle: { color: '#fff', fontSize: 28, fontWeight: '800', marginBottom: 20 },
   overlayBtn: { backgroundColor: '#e8452f', borderRadius: 12, paddingHorizontal: 32, paddingVertical: 14 },
   overlayBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  settingsOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
+  settingsSheet: { width: '80%', backgroundColor: '#150f2e', borderRadius: 16, padding: 18 },
+  settingsTitle: { color: '#fff', fontSize: 16, fontWeight: '800', marginBottom: 14 },
+  settingsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  settingsLabel: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  settingsCloseBtn: { backgroundColor: '#7c5cff', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  settingsCloseText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 });

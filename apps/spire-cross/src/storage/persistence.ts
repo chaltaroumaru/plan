@@ -30,6 +30,7 @@ function buildDefaultProfile(): PlayerProfile {
     totalCharPulls: 0,
     totalCardPulls: 0,
     clearedStoryStageIds: [],
+    settings: { bgmOn: true, seOn: true, notifyMissionComplete: true, notifyApFull: true },
   };
   return { ...base, deckCardIds: buildDefaultDeck(base) };
 }
@@ -41,7 +42,8 @@ export async function loadProfile(): Promise<PlayerProfile> {
     const raw = await AsyncStorage.getItem(PROFILE_KEY);
     if (!raw) return buildDefaultProfile();
     const parsed = JSON.parse(raw);
-    return { ...buildDefaultProfile(), ...parsed };
+    const defaults = buildDefaultProfile();
+    return { ...defaults, ...parsed, settings: { ...defaults.settings, ...(parsed.settings ?? {}) } };
   } catch {
     return buildDefaultProfile();
   }

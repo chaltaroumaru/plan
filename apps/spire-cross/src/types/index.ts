@@ -109,6 +109,13 @@ export interface ApState {
   updatedAt: string; // ISO timestamp
 }
 
+export interface GameSettings {
+  bgmOn: boolean;
+  seOn: boolean;
+  notifyMissionComplete: boolean;
+  notifyApFull: boolean;
+}
+
 export interface PlayerProfile {
   gold: number;
   stones: number; // 交界石
@@ -124,6 +131,7 @@ export interface PlayerProfile {
   totalCharPulls: number;
   totalCardPulls: number;
   clearedStoryStageIds: string[];
+  settings: GameSettings;
 }
 
 export interface BattleCharacterState {

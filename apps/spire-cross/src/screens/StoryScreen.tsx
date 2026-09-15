@@ -64,6 +64,7 @@ export default function StoryScreen() {
   if (activeStage) {
     return (
       <BattleView
+        stageLabel={`第${activeStage.chapter}章-${activeStage.order}`}
         partyMembers={partyMembers}
         deckCardIds={profile.deckCardIds}
         enemyDefs={activeStage.enemyIds.map((id) => getEnemy(id))}
