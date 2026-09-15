@@ -42,41 +42,48 @@ const TAB_ICON: Record<string, string> = {
 
 export default function App() {
   return (
-    <View style={styles.root}>
-      <AppBackground />
-      <SafeAreaProvider>
-        <GameProvider>
-          <NavigationContainer theme={theme}>
-            <Tab.Navigator
-              screenOptions={({ route }) => ({
-                headerShown: false,
-                tabBarActiveTintColor: THEME.gold,
-                tabBarInactiveTintColor: '#8a80b0',
-                tabBarStyle: {
-                  backgroundColor: 'rgba(15,11,32,0.92)',
-                  borderTopColor: 'rgba(124,92,255,0.25)',
-                },
-                tabBarIcon: () => <Text style={{ fontSize: 16 }}>{TAB_ICON[route.name] ?? ''}</Text>,
-                tabBarLabel: route.name,
-                tabBarLabelStyle: { fontSize: 9.5 },
-                tabBarItemStyle: { paddingVertical: 2 },
-              })}
-            >
-              <Tab.Screen name="ホーム" component={HomeScreen} />
-              <Tab.Screen name="ダンジョン" component={DungeonScreen} />
-              <Tab.Screen name="ストーリー" component={StoryScreen} />
-              <Tab.Screen name="キャラ" component={CharactersScreen} />
-              <Tab.Screen name="ガチャ" component={GachaScreen} />
-              <Tab.Screen name="設定" component={SettingsScreen} />
-            </Tab.Navigator>
-          </NavigationContainer>
-          <StatusBar style="light" />
-        </GameProvider>
-      </SafeAreaProvider>
+    <View style={styles.outer}>
+      <View style={styles.frame}>
+        <AppBackground />
+        <SafeAreaProvider>
+          <GameProvider>
+            <NavigationContainer theme={theme}>
+              <Tab.Navigator
+                screenOptions={({ route }) => ({
+                  headerShown: false,
+                  tabBarActiveTintColor: THEME.gold,
+                  tabBarInactiveTintColor: '#8a80b0',
+                  tabBarStyle: {
+                    backgroundColor: 'rgba(15,11,32,0.92)',
+                    borderTopColor: 'rgba(124,92,255,0.25)',
+                    height: 72,
+                    paddingTop: 8,
+                  },
+                  tabBarIcon: () => <Text style={{ fontSize: 24 }}>{TAB_ICON[route.name] ?? ''}</Text>,
+                  tabBarLabel: route.name,
+                  tabBarLabelStyle: { fontSize: 12, fontWeight: '700' },
+                  tabBarItemStyle: { paddingVertical: 4 },
+                })}
+              >
+                <Tab.Screen name="ホーム" component={HomeScreen} />
+                <Tab.Screen name="ダンジョン" component={DungeonScreen} />
+                <Tab.Screen name="ストーリー" component={StoryScreen} />
+                <Tab.Screen name="キャラ" component={CharactersScreen} />
+                <Tab.Screen name="ガチャ" component={GachaScreen} />
+                <Tab.Screen name="設定" component={SettingsScreen} />
+              </Tab.Navigator>
+            </NavigationContainer>
+            <StatusBar style="light" />
+          </GameProvider>
+        </SafeAreaProvider>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: THEME.bgBottom },
+  outer: { flex: 1, backgroundColor: '#000', alignItems: 'center' },
+  // スマホ画面比率にレターボックスすることで、PCの横長ウィンドウでも
+  // 背景イラストのクロップ位置がスマホと揃うようにする
+  frame: { flex: 1, width: '100%', maxWidth: 480, backgroundColor: THEME.bgBottom },
 });

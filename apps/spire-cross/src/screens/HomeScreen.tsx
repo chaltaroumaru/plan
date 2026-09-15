@@ -87,19 +87,35 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>メニュー</Text>
-        <View style={styles.zigzagWrap}>
-          <View style={styles.zigzagLine} pointerEvents="none" />
-          {NAV_ITEMS.map((item, idx) => (
-            <Pressable
-              key={item.key}
-              style={[styles.navCard, idx % 2 === 0 ? styles.navCardLeft : styles.navCardRight]}
-              onPress={() => navigation.navigate(item.key)}
-            >
-              <Text style={styles.navEmoji}>{item.emoji}</Text>
-              <Text style={styles.navLabel}>{item.label}</Text>
-            </Pressable>
-          ))}
+        <View style={styles.navGrid}>
+          <View style={styles.navRow}>
+            {NAV_ITEMS.slice(0, 3).map((item) => (
+              <Pressable
+                key={item.key}
+                style={styles.navItem}
+                onPress={() => navigation.navigate(item.key)}
+              >
+                <View style={styles.navCircle}>
+                  <Text style={styles.navEmoji}>{item.emoji}</Text>
+                </View>
+                <Text style={styles.navLabel}>{item.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <View style={styles.navRow}>
+            {NAV_ITEMS.slice(3).map((item) => (
+              <Pressable
+                key={item.key}
+                style={styles.navItem}
+                onPress={() => navigation.navigate(item.key)}
+              >
+                <View style={styles.navCircle}>
+                  <Text style={styles.navEmoji}>{item.emoji}</Text>
+                </View>
+                <Text style={styles.navLabel}>{item.label}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       </ScrollView>
 
@@ -198,34 +214,21 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: '#1b1040', fontSize: 9, fontWeight: '800' },
   sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 8, marginBottom: 8 },
-  zigzagWrap: { position: 'relative', paddingVertical: 4 },
-  zigzagLine: {
-    position: 'absolute',
-    left: '50%',
-    top: 10,
-    bottom: 10,
-    width: 0,
-    borderLeftWidth: 2,
-    borderLeftColor: 'rgba(124,92,255,0.3)',
-    borderStyle: 'dashed',
-  },
-  navCard: {
-    width: '58%',
+  navGrid: { marginTop: 8, gap: 20 },
+  navRow: { flexDirection: 'row', justifyContent: 'center', gap: 20 },
+  navItem: { alignItems: 'center', width: 92 },
+  navCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: 'rgba(30,20,58,0.85)',
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    marginBottom: 14,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(124,92,255,0.35)',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(124,92,255,0.45)',
   },
-  navCardLeft: { alignSelf: 'flex-start' },
-  navCardRight: { alignSelf: 'flex-end' },
-  navEmoji: { fontSize: 24 },
-  navLabel: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  navEmoji: { fontSize: 34 },
+  navLabel: { color: '#fff', fontSize: 13, fontWeight: '700', marginTop: 8, textAlign: 'center' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(5,3,15,0.75)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modalCard: {
     backgroundColor: '#1b1330',

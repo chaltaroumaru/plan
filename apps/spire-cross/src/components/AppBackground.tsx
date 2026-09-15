@@ -12,17 +12,22 @@ export const THEME = {
   lavender: '#c9b8ff',
 };
 
+// 元イラストの実寸比率(幅940 x 高さ1672)。端末ごとの縦横比の違いで
+// 塔の見え方がずれないよう、幅基準でスケールして上端を揃える。
+const IMAGE_ASPECT_RATIO = 940 / 1672;
+
 /**
  * 交界石の世界観(境界が交わる神秘的な塔)を表現する共通背景。
- * AI生成イラスト(assets/backgrounds/home_background.jpg)を全画面に敷き、
- * 下部はUIの視認性を確保するためグラデーションでさらに暗くしている。
+ * AI生成イラスト(assets/backgrounds/home_background.jpg)を、
+ * 画面幅いっぱい・上端揃えで敷く(はみ出す下部は元々暗い余白なので切れても目立たない)。
+ * 下部はさらにグラデーションで暗くしてUIの視認性を確保している。
  */
 export default function AppBackground() {
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, styles.container]} pointerEvents="none">
       <Image
         source={require('../../assets/backgrounds/home_background.jpg')}
-        style={StyleSheet.absoluteFill}
+        style={[styles.image, { aspectRatio: IMAGE_ASPECT_RATIO }]}
         resizeMode="cover"
       />
       <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
@@ -38,3 +43,16 @@ export default function AppBackground() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: THEME.bgBottom,
+    overflow: 'hidden',
+  },
+  image: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+  },
+});
