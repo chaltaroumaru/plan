@@ -2,15 +2,19 @@ import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGame } from '../state/GameContext';
-import { STORY_STAGES, isStoryStageUnlocked } from '../data/storyStages';
+import { STORY_CHAPTERS, STORY_STAGES, isStoryStageUnlocked } from '../data/storyStages';
 import { getEnemy } from '../data/enemies';
 import { getCharacter } from '../data/characters';
 import { CharacterDef, CharacterProgress, StoryStageDef } from '../types';
 import { grantExp } from '../game/leveling';
 import BattleView from './BattleView';
+import NarrativeReader from '../components/NarrativeReader';
+
+type Phase = 'list' | 'intro' | 'battle' | 'outro';
 
 export default function StoryScreen() {
   const { profile, updateProfile } = useGame();
+  const [phase, setPhase] = useState<Phase>('list');
   const [activeStage, setActiveStage] = useState<StoryStageDef | null>(null);
   const [resultText, setResultText] = useState<string | null>(null);
 
@@ -29,6 +33,7 @@ export default function StoryScreen() {
     }
     setResultText(null);
     setActiveStage(stage);
+    setPhase('intro');
   };
 
   const handleFinished = (won: boolean) => {
@@ -55,13 +60,27 @@ export default function StoryScreen() {
       setResultText(
         `クリア! 💰+${activeStage.rewardGold} ・ 💎+${activeStage.rewardStones} ・ EXP+${activeStage.rewardExp}(パーティ全員)`
       );
+      setPhase('outro');
     } else {
       setResultText('敗北…パーティを強化してから再挑戦しましょう。');
+      setActiveStage(null);
+      setPhase('list');
     }
-    setActiveStage(null);
   };
 
-  if (activeStage) {
+  if (phase === 'intro' && activeStage) {
+    return (
+      <NarrativeReader
+        chapterLabel={`第${activeStage.chapter}章「${activeStage.chapterTitle}」・${activeStage.order}`}
+        title={activeStage.title}
+        body={activeStage.narrativeIntro}
+        continueLabel="戦闘へ進む →"
+        onContinue={() => setPhase('battle')}
+      />
+    );
+  }
+
+  if (phase === 'battle' && activeStage) {
     return (
       <BattleView
         stageLabel={`第${activeStage.chapter}章-${activeStage.order}`}
@@ -73,13 +92,26 @@ export default function StoryScreen() {
     );
   }
 
-  const chapterStages = STORY_STAGES.filter((s) => s.chapter === 1).sort((a, b) => a.order - b.order);
+  if (phase === 'outro' && activeStage) {
+    return (
+      <NarrativeReader
+        chapterLabel={`第${activeStage.chapter}章「${activeStage.chapterTitle}」・${activeStage.order}`}
+        title="そして、物語は続く"
+        body={activeStage.narrativeOutro}
+        continueLabel="続きへ ✓"
+        onContinue={() => {
+          setActiveStage(null);
+          setPhase('list');
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>ストーリー</Text>
-        <Text style={styles.subtitle}>第1章</Text>
+        <Text style={styles.subtitle}>塔を昇る旅人の物語を、章ごとに読み進める</Text>
       </View>
 
       {resultText && (
@@ -89,28 +121,40 @@ export default function StoryScreen() {
       )}
 
       <ScrollView contentContainerStyle={styles.container}>
-        {chapterStages.map((stage) => {
-          const cleared = profile.clearedStoryStageIds.includes(stage.id);
-          const unlocked = isStoryStageUnlocked(stage, profile.clearedStoryStageIds);
+        {STORY_CHAPTERS.map(({ chapter, title: chapterTitle }) => {
+          const chapterStages = STORY_STAGES.filter((s) => s.chapter === chapter).sort(
+            (a, b) => a.order - b.order
+          );
           return (
-            <Pressable
-              key={stage.id}
-              style={[styles.stageCard, !unlocked && styles.locked]}
-              disabled={!unlocked}
-              onPress={() => startStage(stage)}
-            >
-              <View style={styles.stageHeaderRow}>
-                <Text style={styles.stageTitle}>
-                  {stage.order}. {stage.title}
-                </Text>
-                {cleared && <Text style={styles.clearedBadge}>クリア済み</Text>}
-                {!unlocked && <Text style={styles.lockedBadge}>🔒</Text>}
-              </View>
-              <Text style={styles.flavorText}>{stage.flavorText}</Text>
-              <Text style={styles.rewardText}>
-                💰{stage.rewardGold} ・ 💎{stage.rewardStones} ・ EXP{stage.rewardExp}
+            <View key={chapter} style={styles.chapterBlock}>
+              <Text style={styles.chapterHeading}>
+                第{chapter}章 「{chapterTitle}」
               </Text>
-            </Pressable>
+              {chapterStages.map((stage) => {
+                const cleared = profile.clearedStoryStageIds.includes(stage.id);
+                const unlocked = isStoryStageUnlocked(stage, profile.clearedStoryStageIds);
+                return (
+                  <Pressable
+                    key={stage.id}
+                    style={[styles.stageCard, !unlocked && styles.locked]}
+                    disabled={!unlocked}
+                    onPress={() => startStage(stage)}
+                  >
+                    <View style={styles.stageHeaderRow}>
+                      <Text style={styles.stageTitle}>
+                        {stage.order}. {stage.title}
+                      </Text>
+                      {cleared && <Text style={styles.clearedBadge}>クリア済み</Text>}
+                      {!unlocked && <Text style={styles.lockedBadge}>🔒</Text>}
+                    </View>
+                    <Text style={styles.flavorText}>{stage.flavorText}</Text>
+                    <Text style={styles.rewardText}>
+                      💰{stage.rewardGold} ・ 💎{stage.rewardStones} ・ EXP{stage.rewardExp}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           );
         })}
       </ScrollView>
@@ -126,6 +170,14 @@ const styles = StyleSheet.create({
   resultBox: { marginHorizontal: 16, backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 10, padding: 10, marginTop: 4 },
   resultText: { color: '#f5b400', fontSize: 12, fontWeight: '700' },
   container: { padding: 16, paddingBottom: 48 },
+  chapterBlock: { marginBottom: 20 },
+  chapterHeading: {
+    color: '#c9b8ff',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
   stageCard: { backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 12, padding: 14, marginBottom: 10 },
   locked: { opacity: 0.4 },
   stageHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

@@ -68,9 +68,15 @@ export interface DungeonStageDef {
 export interface StoryStageDef {
   id: string;
   chapter: number;
+  chapterTitle: string;
   order: number;
   title: string;
+  /** ステージ一覧カードに出す短い要約 */
   flavorText: string;
+  /** 戦闘前に読む、小説からそのまま抜粋した本文(段落は\n\nで区切る) */
+  narrativeIntro: string;
+  /** 戦闘後(勝利時)に読む、その先の展開の抜粋 */
+  narrativeOutro: string;
   enemyIds: string[];
   rewardGold: number;
   rewardStones: number;
