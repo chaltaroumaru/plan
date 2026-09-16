@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Alert, StyleSheet, Text, View, Pressable } from 'react-native';
 import { CharacterDef } from '../types';
 import { useGame } from '../state/GameContext';
-import { SKILL_TREE_TEMPLATE, getSkillTreeNode } from '../data/skillTree';
+import { getSkillTreeNode, getSkillTreeTemplateFor } from '../data/skillTree';
 import { MATERIAL_LABEL } from '../data/economy';
 import { computeEffectiveStats, canAllocateNode, allocateNode } from '../game/skillTree';
 import SkillTreeRadial from './SkillTreeRadial';
@@ -16,9 +16,11 @@ export default function SkillTreePanel({ character }: { character: CharacterDef 
   const progress = profile.characterProgress[character.id];
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
+  const treeNodes = useMemo(() => getSkillTreeTemplateFor(character), [character]);
+
   const allocatableNodeIds = useMemo(() => {
     if (!progress) return [];
-    return SKILL_TREE_TEMPLATE.filter((node) => {
+    return treeNodes.filter((node) => {
       if (progress.allocatedNodeIds.includes(node.id)) return false;
       if (node.requiresNodeIds.some((id) => !progress.allocatedNodeIds.includes(id))) return false;
       if (node.requiresSignatureCard && (profile.ownedCardCounts[character.signatureCardId] ?? 0) <= 0) {
@@ -36,7 +38,7 @@ export default function SkillTreePanel({ character }: { character: CharacterDef 
       }
       return true;
     }).map((n) => n.id);
-  }, [progress, profile, character.signatureCardId]);
+  }, [progress, profile, character.signatureCardId, treeNodes]);
 
   if (!progress) {
     return null;
@@ -77,7 +79,7 @@ export default function SkillTreePanel({ character }: { character: CharacterDef 
 
       <SkillTreeRadial
         character={character}
-        nodes={SKILL_TREE_TEMPLATE}
+        nodes={treeNodes}
         allocatedNodeIds={progress.allocatedNodeIds}
         allocatableNodeIds={allocatableNodeIds}
         selectedNodeId={selectedNodeId}

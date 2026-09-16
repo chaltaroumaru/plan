@@ -176,6 +176,27 @@ export const CHARACTER_MAP: Record<string, CharacterDef> = Object.fromEntries(
   CHARACTERS.map((c) => [c.id, c])
 );
 
+// 旅人(プレイヤーが作成する主人公)は固定データではなく、プレイヤーの
+// ポイント振り分け・役職選択から動的に組み立てられる(game/travelerBuild.ts)。
+// GameProvider が profile.traveler の変化のたびにここへ同期することで、
+// 既存の getCharacter(id) 呼び出し側(バトル・一覧・スキルツリー等)を
+// 変更せずに旅人キャラを扱えるようにしている。
+let travelerOverride: CharacterDef | null = null;
+
+export function setTravelerCharacterDef(def: CharacterDef | null): void {
+  travelerOverride = def;
+}
+
+export function getTravelerCharacterDef(): CharacterDef | null {
+  return travelerOverride;
+}
+
 export function getCharacter(id: string): CharacterDef | undefined {
+  if (travelerOverride && id === travelerOverride.id) return travelerOverride;
   return CHARACTER_MAP[id];
+}
+
+/** 旅人(作成済みの場合)を先頭に含めた、一覧・編成画面用のロスター */
+export function getRosterCharacters(): CharacterDef[] {
+  return travelerOverride ? [travelerOverride, ...CHARACTERS] : CHARACTERS;
 }

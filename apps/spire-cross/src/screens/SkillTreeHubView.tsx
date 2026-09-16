@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { useGame } from '../state/GameContext';
-import { CHARACTERS, RARITY_COLOR } from '../data/characters';
+import { RARITY_COLOR, getRosterCharacters } from '../data/characters';
 import SkillTreePanel from '../components/SkillTreePanel';
 
 export default function SkillTreeHubView({
@@ -13,8 +13,8 @@ export default function SkillTreeHubView({
 }) {
   const { profile } = useGame();
   const ownedCharacters = useMemo(
-    () => CHARACTERS.filter((c) => !!profile.ownedCharacterCounts[c.id]),
-    [profile.ownedCharacterCounts]
+    () => getRosterCharacters().filter((c) => !!profile.ownedCharacterCounts[c.id]),
+    [profile.ownedCharacterCounts, profile.traveler]
   );
 
   const [selectedId, setSelectedId] = useState<string | null>(

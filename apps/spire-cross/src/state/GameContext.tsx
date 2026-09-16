@@ -2,6 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { PlayerProfile } from '../types';
 import { DEFAULT_PROFILE, loadProfile, saveProfile } from '../storage/persistence';
 import { recoverAp } from '../game/ap';
+import { setTravelerCharacterDef } from '../data/characters';
+import { buildTravelerCharacterDef } from '../game/travelerBuild';
 
 interface GameContextValue {
   profile: PlayerProfile;
@@ -22,6 +24,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     })();
   }, []);
+
+  // getCharacter('traveler') 等の同期呼び出し側(バトル・一覧・スキルツリー等)が
+  // 常に最新の旅人データを参照できるよう、レンダーのたびに同期する
+  // (useEffectだと1フレーム遅れて古いデータが見えてしまうため、あえてレンダー中に行う)。
+  setTravelerCharacterDef(profile.traveler ? buildTravelerCharacterDef(profile.traveler) : null);
 
   const updateProfile = useCallback((updater: (p: PlayerProfile) => PlayerProfile) => {
     setProfileState((prev) => {

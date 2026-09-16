@@ -16,6 +16,8 @@ export interface CharacterDef {
   /** このキャラのスキルツリー特殊ノードの解放条件になるカード */
   signatureCardId: string;
   cardIds: [string, string];
+  /** 旅人(プレイヤー作成キャラ)にのみ設定される役職。役職別スキルツリーの判定に使う */
+  travelerRole?: PlayerRole;
 }
 
 export type CardType = 'attack' | 'skill' | 'power';
@@ -97,6 +99,16 @@ export interface SkillTreeNodeDef {
   requiresTotalSpent?: number;
 }
 
+/** 旅人(プレイヤーキャラ)の役職。境界に対してどう関わるかで4種に分かれる。 */
+export type PlayerRole = 'pierce' | 'guard' | 'weave' | 'shadow';
+
+export interface TravelerBuild {
+  name: string;
+  role: PlayerRole;
+  /** ポイント振り分け結果(素点。実ステータスへの反映は game/travelerBuild.ts で計算) */
+  allocatedPoints: { hp: number; atk: number; def: number };
+}
+
 export interface CharacterProgress {
   level: number;
   exp: number;
@@ -134,6 +146,8 @@ export interface PlayerProfile {
   totalCardPulls: number;
   clearedStoryStageIds: string[];
   settings: GameSettings;
+  /** プレイヤー自身が作成する主人公(旅人)。未作成の場合はnull */
+  traveler: TravelerBuild | null;
 }
 
 export interface BattleCharacterState {

@@ -1,4 +1,5 @@
-import { Rarity, SkillTreeNodeDef } from '../types';
+import { CharacterDef, Rarity, SkillTreeNodeDef } from '../types';
+import { ALL_ROLE_SKILL_NODES, ROLE_SKILL_TREE } from './roles';
 
 /** スキルツリーの効果量に掛けるレアリティ倍率(カード・キャラの基礎ステ倍率と同じ考え方) */
 export const SKILL_RARITY_MULT: Record<Rarity, number> = {
@@ -109,13 +110,19 @@ export const SKILL_TREE_TEMPLATE: SkillTreeNodeDef[] = [
 ];
 
 export const SKILL_TREE_MAP: Record<string, SkillTreeNodeDef> = Object.fromEntries(
-  SKILL_TREE_TEMPLATE.map((n) => [n.id, n])
+  [...SKILL_TREE_TEMPLATE, ...ALL_ROLE_SKILL_NODES].map((n) => [n.id, n])
 );
 
 export function getSkillTreeNode(id: string): SkillTreeNodeDef {
   const node = SKILL_TREE_MAP[id];
   if (!node) throw new Error(`Unknown skill tree node id: ${id}`);
   return node;
+}
+
+/** キャラごとのスキルツリー構成。旅人(役職を持つキャラ)は役職別ツリー、それ以外は共通ツリー。 */
+export function getSkillTreeTemplateFor(character: CharacterDef): SkillTreeNodeDef[] {
+  if (character.travelerRole) return ROLE_SKILL_TREE[character.travelerRole];
+  return SKILL_TREE_TEMPLATE;
 }
 
 export const TOTAL_SKILL_TREE_COST = SKILL_TREE_TEMPLATE.reduce((sum, n) => sum + n.cost, 0);

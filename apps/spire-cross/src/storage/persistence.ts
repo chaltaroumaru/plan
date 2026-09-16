@@ -31,6 +31,7 @@ function buildDefaultProfile(): PlayerProfile {
     totalCardPulls: 0,
     clearedStoryStageIds: [],
     settings: { bgmOn: true, seOn: true, notifyMissionComplete: true, notifyApFull: true },
+    traveler: null,
   };
   return { ...base, deckCardIds: buildDefaultDeck(base) };
 }

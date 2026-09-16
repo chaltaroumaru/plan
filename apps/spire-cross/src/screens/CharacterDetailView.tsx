@@ -23,7 +23,8 @@ export default function CharacterDetailView({
     return null;
   }
 
-  const signatureCard = getCard(character.signatureCardId);
+  // 旅人(プレイヤー作成キャラ)は専用カードを持たない(signatureCardId: '')
+  const signatureCard = character.signatureCardId ? getCard(character.signatureCardId) : null;
   const ownsSignatureCard = (profile.ownedCardCounts[character.signatureCardId] ?? 0) > 0;
 
   return (
@@ -53,12 +54,17 @@ export default function CharacterDetailView({
         <Bar value={progress.exp} max={expForNextLevel(progress.level)} color="#f5b400" height={8} />
       </View>
 
-      <Text style={styles.sectionTitle}>専用カード</Text>
-      <View style={styles.signatureBox}>
-        <Text style={styles.signatureText}>
-          {signatureCard.name}({signatureCard.description}) を{ownsSignatureCard ? '所持しています' : '所持していません'}
-        </Text>
-      </View>
+      {signatureCard && (
+        <>
+          <Text style={styles.sectionTitle}>専用カード</Text>
+          <View style={styles.signatureBox}>
+            <Text style={styles.signatureText}>
+              {signatureCard.name}({signatureCard.description}) を
+              {ownsSignatureCard ? '所持しています' : '所持していません'}
+            </Text>
+          </View>
+        </>
+      )}
 
       <Pressable style={styles.skillTreeBtn} onPress={() => onOpenSkillTree(character)}>
         <Text style={styles.skillTreeBtnText}>🌳 スキルツリーで育成する →</Text>

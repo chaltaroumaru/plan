@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGame } from '../state/GameContext';
-import { CHARACTERS } from '../data/characters';
+import { getRosterCharacters } from '../data/characters';
 import { CharacterDef } from '../types';
 import CharacterTile from '../components/CharacterTile';
 import CharacterDetailView from './CharacterDetailView';
@@ -11,8 +11,9 @@ import DeckEditorView from './DeckEditorView';
 import SkillTreeHubView from './SkillTreeHubView';
 import CharacterAwakeningView from './CharacterAwakeningView';
 import CharacterEvolutionView from './CharacterEvolutionView';
+import TravelerCreateView from './TravelerCreateView';
 
-type Mode = 'hub' | 'list' | 'detail' | 'party' | 'deck' | 'awakening' | 'evolution' | 'skilltree';
+type Mode = 'hub' | 'list' | 'detail' | 'party' | 'deck' | 'awakening' | 'evolution' | 'skilltree' | 'traveler';
 
 export default function CharactersScreen() {
   const { profile } = useGame();
@@ -22,6 +23,9 @@ export default function CharactersScreen() {
 
   const backToHub = () => setMode('hub');
 
+  if (mode === 'traveler') {
+    return <TravelerCreateView onBack={backToHub} />;
+  }
   if (mode === 'party') {
     return <PartyEditorView onBack={backToHub} />;
   }
@@ -63,10 +67,10 @@ export default function CharactersScreen() {
           </Pressable>
           <Text style={styles.title}>キャラクター一覧</Text>
           <Text style={styles.subtitle}>
-            {Object.keys(profile.ownedCharacterCounts).length} / {CHARACTERS.length} 体所持
+            {Object.keys(profile.ownedCharacterCounts).length} / {getRosterCharacters().length} 体所持
           </Text>
           <View style={styles.grid}>
-            {CHARACTERS.map((c) => {
+            {getRosterCharacters().map((c) => {
               const owned = !!profile.ownedCharacterCounts[c.id];
               return (
                 <CharacterTile
@@ -96,8 +100,13 @@ export default function CharactersScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>キャラクター</Text>
         <Text style={styles.subtitle}>
-          {Object.keys(profile.ownedCharacterCounts).length} / {CHARACTERS.length} 体所持
+          {Object.keys(profile.ownedCharacterCounts).length} / {getRosterCharacters().length} 体所持
         </Text>
+
+        <Pressable style={[styles.menuBtnWide, styles.menuBtnHighlight]} onPress={() => setMode('traveler')}>
+          <Text style={styles.menuEmoji}>🧭</Text>
+          <Text style={styles.menuLabel}>{profile.traveler ? '旅人を編集' : '旅人を作成'}</Text>
+        </Pressable>
 
         <Pressable style={styles.menuBtnWide} onPress={() => setMode('party')}>
           <Text style={styles.menuEmoji}>👥</Text>
@@ -157,6 +166,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(124,92,255,0.25)',
   },
+  menuBtnHighlight: { borderColor: 'rgba(255,215,106,0.55)', backgroundColor: 'rgba(255,215,106,0.12)' },
   menuRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   menuBtnHalf: {
     flex: 1,

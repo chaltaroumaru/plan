@@ -1,7 +1,7 @@
 import React from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { useGame } from '../state/GameContext';
-import { CHARACTERS } from '../data/characters';
+import { getRosterCharacters } from '../data/characters';
 import CharacterTile from '../components/CharacterTile';
 
 const MAX_PARTY = 3;
@@ -31,7 +31,7 @@ export default function PartyEditorView({ onBack }: { onBack: () => void }) {
       <Text style={styles.title}>パーティ編成 ({profile.partyIds.length}/{MAX_PARTY})</Text>
       <Text style={styles.helpText}>タップで出撃キャラを選択(所持キャラのみ)。</Text>
       <View style={styles.grid}>
-        {CHARACTERS.map((c) => (
+        {getRosterCharacters().map((c) => (
           <CharacterTile
             key={c.id}
             character={c}
