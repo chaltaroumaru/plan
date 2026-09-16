@@ -1,23 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { LayoutChangeEvent, Modal, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGame } from '../state/GameContext';
 import { AP_MAX } from '../data/economy';
 import { recoverAp } from '../game/ap';
 import { getCharacter, RARITY_COLOR } from '../data/characters';
 import Bar from '../components/Bar';
+import HomeMapHotspots from '../components/HomeMapHotspots';
 
 const ANNOUNCEMENTS = [
   { id: 'a1', title: 'プロトタイプ版へようこそ', body: 'スパイア・クロスのv2プロトタイプです。今後も内容は調整されます。' },
   { id: 'a2', title: '第1章 配信中', body: 'ストーリー第1章が挑戦可能です。まずはパーティを編成しましょう。' },
-];
-
-const NAV_ITEMS: { key: string; label: string; emoji: string }[] = [
-  { key: 'ダンジョン', label: 'ダンジョン', emoji: '🗺️' },
-  { key: 'ストーリー', label: 'ストーリー', emoji: '📖' },
-  { key: 'キャラ', label: 'キャラ', emoji: '👥' },
-  { key: 'ガチャ', label: 'ガチャ', emoji: '🎰' },
-  { key: '設定', label: '設定', emoji: '⚙️' },
 ];
 
 export default function HomeScreen({ navigation }: any) {
@@ -25,6 +18,9 @@ export default function HomeScreen({ navigation }: any) {
   const ap = useMemo(() => recoverAp(profile.ap), [profile.ap]);
   const [showAnnouncements, setShowAnnouncements] = useState(false);
   const [showMissions, setShowMissions] = useState(false);
+  const [mapWidth, setMapWidth] = useState(0);
+
+  const onMapLayout = (e: LayoutChangeEvent) => setMapWidth(e.nativeEvent.layout.width);
 
   const partyLevels = profile.partyIds
     .map((id) => profile.characterProgress[id]?.level)
@@ -40,7 +36,8 @@ export default function HomeScreen({ navigation }: any) {
   const missionsRemaining = missions.filter((m) => !m.done).length;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.root} onLayout={onMapLayout}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>スパイア・クロス</Text>
 
@@ -120,37 +117,12 @@ export default function HomeScreen({ navigation }: any) {
           )}
         </View>
 
-        <View style={styles.navGrid}>
-          <View style={styles.navRow}>
-            {NAV_ITEMS.slice(0, 3).map((item) => (
-              <Pressable
-                key={item.key}
-                style={styles.navItem}
-                onPress={() => navigation.navigate(item.key)}
-              >
-                <View style={styles.navCircle}>
-                  <Text style={styles.navEmoji}>{item.emoji}</Text>
-                </View>
-                <Text style={styles.navLabel}>{item.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <View style={styles.navRow}>
-            {NAV_ITEMS.slice(3).map((item) => (
-              <Pressable
-                key={item.key}
-                style={styles.navItem}
-                onPress={() => navigation.navigate(item.key)}
-              >
-                <View style={styles.navCircle}>
-                  <Text style={styles.navEmoji}>{item.emoji}</Text>
-                </View>
-                <Text style={styles.navLabel}>{item.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        {/* 下部は背景イラスト(宿・屋台・塔への道・魔法陣)を見せるための余白。
+            実際のタップ操作は下のマップホットスポット層(画面全体オーバーレイ)が担う。 */}
+        <View style={styles.mapSpacer} />
       </ScrollView>
+
+      <HomeMapHotspots width={mapWidth} onNavigate={(target) => navigation.navigate(target)} />
 
       <Modal visible={showAnnouncements} transparent animationType="fade" onRequestClose={() => setShowAnnouncements(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setShowAnnouncements(false)}>
@@ -185,13 +157,16 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         </Pressable>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
   container: { padding: 16, paddingBottom: 48 },
+  mapSpacer: { height: 260 },
   title: { fontSize: 26, fontWeight: '800', color: '#fff', marginBottom: 12 },
   headerRow: { flexDirection: 'row', gap: 10, marginBottom: 16, alignItems: 'flex-start' },
   playerBox: {
@@ -292,21 +267,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   partyEmptyText: { color: '#c4c4d4', fontSize: 13, textAlign: 'center', lineHeight: 20 },
-  navGrid: { marginTop: 48, gap: 20 },
-  navRow: { flexDirection: 'row', justifyContent: 'center', gap: 20 },
-  navItem: { alignItems: 'center', width: 92 },
-  navCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: 'rgba(30,20,58,0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(124,92,255,0.45)',
-  },
-  navEmoji: { fontSize: 34 },
-  navLabel: { color: '#fff', fontSize: 13, fontWeight: '700', marginTop: 8, textAlign: 'center' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(5,3,15,0.75)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modalCard: {
     backgroundColor: '#1b1330',

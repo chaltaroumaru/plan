@@ -16,6 +16,7 @@ import DungeonScreen from './src/screens/DungeonScreen';
 import StoryScreen from './src/screens/StoryScreen';
 import CharactersScreen from './src/screens/CharactersScreen';
 import GachaScreen from './src/screens/GachaScreen';
+import ShopScreen from './src/screens/ShopScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -72,6 +73,8 @@ function AppNavigator() {
         <Tab.Screen name="ストーリー" component={StoryScreen} />
         <Tab.Screen name="キャラ" component={CharactersScreen} />
         <Tab.Screen name="ガチャ" component={GachaScreen} />
+        {/* ホーム画面の屋台をタップして入る場所のため、下部タブバーには出さない */}
+        <Tab.Screen name="ショップ" component={ShopScreen} options={{ tabBarButton: () => null }} />
         <Tab.Screen name="設定" component={SettingsScreen} />
       </Tab.Navigator>
     </NavigationContainer>

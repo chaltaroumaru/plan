@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGame } from '../state/GameContext';
 import { GameSettings } from '../types';
 
+// 交界石+1000などのテスト用機能は屋台(ShopScreen)へ移動しました。
+
 function ToggleRow({
   label,
   description,
@@ -37,11 +39,6 @@ export default function SettingsScreen() {
 
   const setSetting = (key: keyof GameSettings, value: boolean) => {
     updateProfile((prev) => ({ ...prev, settings: { ...prev.settings, [key]: value } }));
-  };
-
-  const handleAddTestStones = () => {
-    updateProfile((prev) => ({ ...prev, stones: prev.stones + 1000 }));
-    Alert.alert('追加しました', '交界石を1000個追加しました。');
   };
 
   const handleReset = () => {
@@ -106,17 +103,6 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🧪 テスト用(製品版では削除予定)</Text>
-          <Text style={styles.infoText}>
-            動作確認用に交界石を追加します。データは端末内保存のため、ここから自分の端末に
-            直接付与してください。
-          </Text>
-          <Pressable style={styles.testBtn} onPress={handleAddTestStones}>
-            <Text style={styles.testBtnText}>💎 交界石 +1000 を追加</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.section}>
           <Text style={styles.sectionTitle}>データ管理</Text>
           <Pressable style={styles.dangerBtn} onPress={handleReset}>
             <Text style={styles.dangerBtnText}>進行状況をリセット</Text>
@@ -147,6 +133,4 @@ const styles = StyleSheet.create({
   toggleDesc: { color: '#9a9ab0', fontSize: 10, marginTop: 2 },
   dangerBtn: { backgroundColor: '#e8452f', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   dangerBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  testBtn: { backgroundColor: '#e8a52f', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 8 },
-  testBtnText: { color: '#1a1330', fontWeight: '800', fontSize: 13 },
 });
