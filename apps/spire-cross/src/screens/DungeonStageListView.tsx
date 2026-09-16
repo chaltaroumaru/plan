@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Alert, ImageSourcePropType, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGame } from '../state/GameContext';
 import { DUNGEON_STAGES } from '../data/dungeonStages';
@@ -10,19 +10,24 @@ import { CharacterDef, CharacterProgress, DungeonCategory, DungeonStageDef } fro
 import { consumeAp, minutesUntilNextAp, recoverAp } from '../game/ap';
 import Bar from '../components/Bar';
 import BattleView from './BattleView';
+import ScreenBackground from '../components/ScreenBackground';
 
 /**
  * ダンジョンのステージ一覧+戦闘フロー。「育成ダンジョン」「イベントダンジョン」
  * など、塔内部のパネルから遷移した先の各モードで共通して使う。
+ * background を渡すと、一覧画面だけそのモード専用の背景イラストに差し替わる
+ * (戦闘中は共通の塔背景のまま)。
  */
 export default function DungeonStageListView({
   title,
   categories,
   onBack,
+  background,
 }: {
   title: string;
   categories: DungeonCategory[];
   onBack: () => void;
+  background?: { source: ImageSourcePropType; aspectRatio: number };
 }) {
   const { profile, updateProfile } = useGame();
   const [activeStage, setActiveStage] = useState<DungeonStageDef | null>(null);
@@ -96,7 +101,7 @@ export default function DungeonStageListView({
     );
   }
 
-  return (
+  const content = (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <Pressable onPress={onBack}>
@@ -142,6 +147,14 @@ export default function DungeonStageListView({
         ))}
       </ScrollView>
     </SafeAreaView>
+  );
+
+  if (!background) return content;
+  return (
+    <View style={{ flex: 1 }}>
+      <ScreenBackground source={background.source} aspectRatio={background.aspectRatio} dim={0.15} cover />
+      {content}
+    </View>
   );
 }
 

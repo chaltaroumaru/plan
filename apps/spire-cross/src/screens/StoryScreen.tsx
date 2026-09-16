@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Alert, ImageSourcePropType, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGame } from '../state/GameContext';
 import { STORY_CHAPTERS, STORY_STAGES, isStoryStageUnlocked } from '../data/storyStages';
@@ -9,10 +9,22 @@ import { CharacterDef, CharacterProgress, StoryStageDef } from '../types';
 import { grantExp } from '../game/leveling';
 import BattleView from './BattleView';
 import NarrativeReader from '../components/NarrativeReader';
+import ScreenBackground from '../components/ScreenBackground';
 
 type Phase = 'list' | 'intro' | 'battle' | 'outro';
 
-export default function StoryScreen() {
+/**
+ * ストーリー進行(章一覧→本文を読む→戦闘→本文の続き)。下部タブの
+ * 「ストーリー」からはそのまま(共通の塔背景)、ダンジョン画面の
+ * 「ストーリーダンジョン」パネルからは専用背景+戻る導線付きで表示する。
+ */
+export default function StoryScreen({
+  background,
+  onBack,
+}: {
+  background?: { source: ImageSourcePropType; aspectRatio: number };
+  onBack?: () => void;
+} = {}) {
   const { profile, updateProfile } = useGame();
   const [phase, setPhase] = useState<Phase>('list');
   const [activeStage, setActiveStage] = useState<StoryStageDef | null>(null);
@@ -107,9 +119,14 @@ export default function StoryScreen() {
     );
   }
 
-  return (
+  const listContent = (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
+        {onBack && (
+          <Pressable onPress={onBack}>
+            <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
+          </Pressable>
+        )}
         <Text style={styles.title}>ストーリー</Text>
         <Text style={styles.subtitle}>塔を昇る旅人の物語を、章ごとに読み進める</Text>
       </View>
@@ -160,11 +177,20 @@ export default function StoryScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+
+  if (!background) return listContent;
+  return (
+    <View style={{ flex: 1 }}>
+      <ScreenBackground source={background.source} aspectRatio={background.aspectRatio} dim={0.15} cover />
+      {listContent}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: 16, paddingTop: 8 },
+  backLink: { color: '#7c5cff', fontSize: 13, marginBottom: 10 },
   title: { fontSize: 22, fontWeight: '800', color: '#fff' },
   subtitle: { color: '#9a9ab0', fontSize: 12, marginTop: 4, marginBottom: 4 },
   resultBox: { marginHorizontal: 16, backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 10, padding: 10, marginTop: 4 },

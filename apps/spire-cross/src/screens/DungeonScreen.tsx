@@ -3,10 +3,14 @@ import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenBackground from '../components/ScreenBackground';
 import DungeonStageListView from './DungeonStageListView';
+import StoryScreen from './StoryScreen';
 
 const DUNGEON_IMAGE_ASPECT_RATIO = 941 / 1672;
+const TRAINING_BG = { source: require('../../assets/backgrounds/dungeon_training_background.jpg'), aspectRatio: 941 / 1670 };
+const STORY_BG = { source: require('../../assets/backgrounds/dungeon_story_background.jpg'), aspectRatio: 941 / 836 };
+const EVENT_BG = { source: require('../../assets/backgrounds/dungeon_event_background.jpg'), aspectRatio: 941 / 836 };
 
-type Mode = 'hub' | 'training' | 'event';
+type Mode = 'hub' | 'training' | 'story' | 'event';
 
 type PanelHotspot = {
   key: string;
@@ -23,7 +27,7 @@ type PanelHotspot = {
  * 3枚のクリスタルパネル(育成/ストーリー/イベント)をタップして、
  * それぞれのダンジョンモードへ進む。
  */
-export default function DungeonScreen({ navigation }: any) {
+export default function DungeonScreen() {
   const [mode, setMode] = useState<Mode>('hub');
 
   if (mode === 'training') {
@@ -32,13 +36,22 @@ export default function DungeonScreen({ navigation }: any) {
         title="育成ダンジョン"
         categories={['enhance', 'evolve', 'unlock', 'memory', 'raid']}
         onBack={() => setMode('hub')}
+        background={TRAINING_BG}
       />
     );
   }
   if (mode === 'event') {
     return (
-      <DungeonStageListView title="イベントダンジョン" categories={['event']} onBack={() => setMode('hub')} />
+      <DungeonStageListView
+        title="イベントダンジョン"
+        categories={['event']}
+        onBack={() => setMode('hub')}
+        background={EVENT_BG}
+      />
     );
+  }
+  if (mode === 'story') {
+    return <StoryScreen background={STORY_BG} onBack={() => setMode('hub')} />;
   }
 
   const panels: PanelHotspot[] = [
@@ -58,7 +71,7 @@ export default function DungeonScreen({ navigation }: any) {
       top: 0.335,
       width: 0.31,
       height: 0.335,
-      onPress: () => navigation.navigate('ストーリー'),
+      onPress: () => setMode('story'),
     },
     {
       key: 'event',
