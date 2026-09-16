@@ -9,7 +9,7 @@ import { enableScreens } from 'react-native-screens';
 // react-native-screens は web では screensEnabled() が既定で false になり、
 // 非表示タブの display:none が効かず前の画面が透けて見えるため、明示的に有効化する。
 enableScreens();
-import { GameProvider } from './src/state/GameContext';
+import { GameProvider, useGame } from './src/state/GameContext';
 import AppBackground, { THEME } from './src/components/AppBackground';
 import HomeScreen from './src/screens/HomeScreen';
 import DungeonScreen from './src/screens/DungeonScreen';
@@ -18,6 +18,7 @@ import CharactersScreen from './src/screens/CharactersScreen';
 import GachaScreen from './src/screens/GachaScreen';
 import ShopScreen from './src/screens/ShopScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import TravelerCreateView from './src/screens/TravelerCreateView';
 
 const Tab = createBottomTabNavigator();
 
@@ -81,6 +82,24 @@ function AppNavigator() {
   );
 }
 
+/**
+ * サーバー(このプロトタイプではAsyncStorageの初回状態)を立てて最初にゲームを
+ * 開いたときは、まだ誰の旅人も存在しない。公開後は全プレイヤーがここで
+ * チュートリアルの後に自分の旅人を作成する想定だが、現段階のプロトタイプでは
+ * チュートリアルを省き、未作成(profile.traveler === null)なら作成画面を
+ * 必須フローとして表示し、作成が終わると自動的に通常のホーム画面へ進む。
+ */
+function AppGate() {
+  const { profile, loading } = useGame();
+  if (loading) {
+    return <View style={styles.frame} />;
+  }
+  if (!profile.traveler) {
+    return <TravelerCreateView onBack={() => {}} gate />;
+  }
+  return <AppNavigator />;
+}
+
 export default function App() {
   return (
     <View style={styles.outer}>
@@ -88,7 +107,7 @@ export default function App() {
         <AppBackground />
         <SafeAreaProvider>
           <GameProvider>
-            <AppNavigator />
+            <AppGate />
             <StatusBar style="light" />
           </GameProvider>
         </SafeAreaProvider>

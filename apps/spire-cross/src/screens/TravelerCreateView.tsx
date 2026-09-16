@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGame } from '../state/GameContext';
 import { PlayerRole, TravelerBuild } from '../types';
 import {
@@ -24,7 +25,14 @@ import { createInitialProgress } from '../game/leveling';
 const STAT_LABEL: Record<'hp' | 'atk' | 'def', string> = { hp: 'HP', atk: '攻撃力', def: '防御力' };
 const STAT_STEP: Record<'hp' | 'atk' | 'def', number> = { hp: 1, atk: 1, def: 1 };
 
-export default function TravelerCreateView({ onBack }: { onBack: () => void }) {
+export default function TravelerCreateView({
+  onBack,
+  gate,
+}: {
+  onBack: () => void;
+  /** true の場合、初回起動時の必須作成フロー(タブバーが無く、戻る導線も出さない)として表示する */
+  gate?: boolean;
+}) {
   const { profile, updateProfile } = useGame();
   const existing = profile.traveler;
   const [build, setBuild] = useState<TravelerBuild>(
@@ -70,14 +78,18 @@ export default function TravelerCreateView({ onBack }: { onBack: () => void }) {
     Alert.alert(existing ? '旅人を更新しました' : '旅人が誕生しました', undefined, [{ text: 'OK', onPress: onBack }]);
   };
 
-  return (
+  const content = (
     <ScrollView style={styles.safe} contentContainerStyle={styles.container}>
-      <Pressable onPress={onBack}>
-        <Text style={styles.backLink}>← キャラクターへ戻る</Text>
-      </Pressable>
-      <Text style={styles.title}>{existing ? '旅人を編集' : '旅人を作成'}</Text>
+      {!gate && (
+        <Pressable onPress={onBack}>
+          <Text style={styles.backLink}>← キャラクターへ戻る</Text>
+        </Pressable>
+      )}
+      <Text style={styles.title}>{gate ? '旅人を作る' : existing ? '旅人を編集' : '旅人を作成'}</Text>
       <Text style={styles.subtitle}>
-        記憶の大半を失った旅人の、いま確かに残っているものだけを形にする。
+        {gate
+          ? '目を覚ましたあなたに残っているのは、名前と、わずかな力の記憶だけ。塔を昇る前に、いまの自分を形にしよう。'
+          : '記憶の大半を失った旅人の、いま確かに残っているものだけを形にする。'}
       </Text>
 
       <View style={styles.section}>
@@ -157,9 +169,15 @@ export default function TravelerCreateView({ onBack }: { onBack: () => void }) {
       </Pressable>
     </ScrollView>
   );
+
+  if (gate) {
+    return <SafeAreaView style={styles.gateSafe}>{content}</SafeAreaView>;
+  }
+  return content;
 }
 
 const styles = StyleSheet.create({
+  gateSafe: { flex: 1, backgroundColor: 'transparent' },
   safe: { flex: 1, backgroundColor: 'transparent' },
   container: { padding: 16, paddingBottom: 48 },
   backLink: { color: '#7c5cff', fontSize: 13, marginBottom: 12 },
