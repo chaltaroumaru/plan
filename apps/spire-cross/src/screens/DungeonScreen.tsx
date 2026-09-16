@@ -1,159 +1,112 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useGame } from '../state/GameContext';
-import { DUNGEON_STAGES } from '../data/dungeonStages';
-import { DUNGEON_CATEGORY_EMOJI, DUNGEON_CATEGORY_LABEL, MATERIAL_EMOJI, MATERIAL_LABEL, AP_MAX } from '../data/economy';
-import { getEnemy } from '../data/enemies';
-import { getCharacter } from '../data/characters';
-import { CharacterDef, CharacterProgress, DungeonCategory, DungeonStageDef } from '../types';
-import { consumeAp, minutesUntilNextAp, recoverAp } from '../game/ap';
-import Bar from '../components/Bar';
-import BattleView from './BattleView';
+import ScreenBackground from '../components/ScreenBackground';
+import DungeonStageListView from './DungeonStageListView';
 
-const CATEGORIES: DungeonCategory[] = ['enhance', 'evolve', 'unlock', 'memory', 'raid', 'event'];
+const DUNGEON_IMAGE_ASPECT_RATIO = 941 / 1672;
 
-export default function DungeonScreen() {
-  const { profile, updateProfile } = useGame();
-  const [activeStage, setActiveStage] = useState<DungeonStageDef | null>(null);
-  const [resultText, setResultText] = useState<string | null>(null);
+type Mode = 'hub' | 'training' | 'event';
 
-  const ap = useMemo(() => recoverAp(profile.ap), [profile.ap]);
-  const minutesLeft = useMemo(() => minutesUntilNextAp(profile.ap), [profile.ap]);
+type PanelHotspot = {
+  key: string;
+  label: string;
+  left: number; // 画像内でのX位置(0〜1)
+  top: number; // 画像内でのY位置(0〜1)
+  width: number;
+  height: number;
+  onPress: () => void;
+};
 
-  const partyMembers = profile.partyIds
-    .map((id) => {
-      const character = getCharacter(id);
-      const progress = profile.characterProgress[id];
-      return character && progress ? { character, progress } : null;
-    })
-    .filter((v): v is { character: CharacterDef; progress: CharacterProgress } => !!v);
+/**
+ * ホームの塔をタップしてズームインした先、塔の内部。中央に据えられた
+ * 3枚のクリスタルパネル(育成/ストーリー/イベント)をタップして、
+ * それぞれのダンジョンモードへ進む。
+ */
+export default function DungeonScreen({ navigation }: any) {
+  const [mode, setMode] = useState<Mode>('hub');
 
-  const startStage = (stage: DungeonStageDef) => {
-    if (ap.current < stage.apCost) {
-      Alert.alert('APが足りません', `このステージにはAP${stage.apCost}必要です。`);
-      return;
-    }
-    if (partyMembers.length === 0) {
-      Alert.alert('パーティが未編成です', 'キャラ画面でパーティを編成してください。');
-      return;
-    }
-    updateProfile((prev) => ({ ...prev, ap: consumeAp(prev.ap, stage.apCost) }));
-    setResultText(null);
-    setActiveStage(stage);
-  };
-
-  const handleFinished = (won: boolean) => {
-    if (!activeStage) return;
-    if (won) {
-      updateProfile((prev) => {
-        const materials = { ...prev.materials };
-        if (activeStage.rewardMaterial) {
-          materials[activeStage.rewardMaterial.type] += activeStage.rewardMaterial.amount;
-        }
-        return {
-          ...prev,
-          gold: prev.gold + activeStage.rewardGold,
-          stones: prev.stones + activeStage.rewardStones,
-          materials,
-        };
-      });
-      const materialText = activeStage.rewardMaterial
-        ? `${MATERIAL_LABEL[activeStage.rewardMaterial.type]}+${activeStage.rewardMaterial.amount} ・ `
-        : '';
-      setResultText(
-        `勝利! ${materialText}💰+${activeStage.rewardGold}${
-          activeStage.rewardStones > 0 ? ` ・ 💎+${activeStage.rewardStones}` : ''
-        }`
-      );
-    } else {
-      setResultText('敗北…AP は消費されました。パーティやデッキを見直して再挑戦しましょう。');
-    }
-    setActiveStage(null);
-  };
-
-  if (activeStage) {
-    const stageIndex =
-      DUNGEON_STAGES.filter((s) => s.category === activeStage.category).findIndex((s) => s.id === activeStage.id) + 1;
+  if (mode === 'training') {
     return (
-      <BattleView
-        stageLabel={`${DUNGEON_CATEGORY_LABEL[activeStage.category]} ${stageIndex}`}
-        partyMembers={partyMembers}
-        deckCardIds={profile.deckCardIds}
-        enemyDefs={activeStage.enemyIds.map((id) => getEnemy(id))}
-        onFinished={(r) => handleFinished(r.won)}
+      <DungeonStageListView
+        title="育成ダンジョン"
+        categories={['enhance', 'evolve', 'unlock', 'memory', 'raid']}
+        onBack={() => setMode('hub')}
       />
     );
   }
+  if (mode === 'event') {
+    return (
+      <DungeonStageListView title="イベントダンジョン" categories={['event']} onBack={() => setMode('hub')} />
+    );
+  }
+
+  const panels: PanelHotspot[] = [
+    {
+      key: 'training',
+      label: '育成ダンジョン',
+      left: 0.06,
+      top: 0.375,
+      width: 0.29,
+      height: 0.295,
+      onPress: () => setMode('training'),
+    },
+    {
+      key: 'story',
+      label: 'ストーリーダンジョン',
+      left: 0.35,
+      top: 0.335,
+      width: 0.31,
+      height: 0.335,
+      onPress: () => navigation.navigate('ストーリー'),
+    },
+    {
+      key: 'event',
+      label: 'イベントダンジョン',
+      left: 0.65,
+      top: 0.375,
+      width: 0.29,
+      height: 0.295,
+      onPress: () => setMode('event'),
+    },
+  ];
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>ダンジョン</Text>
-        <Bar value={ap.current} max={AP_MAX} color="#7c5cff" height={12} />
-        <Text style={styles.apText}>
-          AP {ap.current}/{AP_MAX} {ap.current < AP_MAX ? `(次の回復まで約${minutesLeft}分)` : ''}
-        </Text>
-      </View>
-
-      {resultText && (
-        <View style={styles.resultBox}>
-          <Text style={styles.resultText}>{resultText}</Text>
-        </View>
-      )}
-
-      <ScrollView contentContainerStyle={styles.container}>
-        {CATEGORIES.map((category) => (
-          <View key={category} style={styles.categoryBlock}>
-            <Text style={styles.categoryTitle}>
-              {DUNGEON_CATEGORY_EMOJI[category]} {DUNGEON_CATEGORY_LABEL[category]}
-            </Text>
-            {DUNGEON_STAGES.filter((s) => s.category === category).map((stage) => (
-              <Pressable key={stage.id} style={styles.stageRow} onPress={() => startStage(stage)}>
-                <View style={styles.stageInfo}>
-                  <Text style={styles.stageName}>{stage.name}</Text>
-                  <Text style={styles.stageReward}>
-                    💰{stage.rewardGold}
-                    {stage.rewardMaterial
-                      ? ` ・ ${MATERIAL_EMOJI[stage.rewardMaterial.type]}${MATERIAL_LABEL[stage.rewardMaterial.type]}+${stage.rewardMaterial.amount}`
-                      : ''}
-                    {stage.rewardStones > 0 ? ` ・ 💎+${stage.rewardStones}` : ''}
-                  </Text>
-                </View>
-                <View style={styles.apCostBadge}>
-                  <Text style={styles.apCostText}>AP {stage.apCost}</Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        ))}
-      </ScrollView>
-    </SafeAreaView>
+    <View style={styles.root}>
+      <ScreenBackground source={require('../../assets/backgrounds/dungeon_background.jpg')} aspectRatio={DUNGEON_IMAGE_ASPECT_RATIO} dim={0.12}>
+        {({ width, height }) =>
+          panels.map((p) => (
+            <Pressable
+              key={p.key}
+              onPress={p.onPress}
+              style={{
+                position: 'absolute',
+                left: width * p.left,
+                top: height * p.top,
+                width: width * p.width,
+                height: height * p.height,
+              }}
+            />
+          ))
+        }
+      </ScreenBackground>
+      <SafeAreaView style={styles.safe} edges={['top']} pointerEvents="box-none">
+        <Text style={styles.title}>塔の中心</Text>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: 'transparent' },
-  header: { paddingHorizontal: 16, paddingTop: 8 },
-  title: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 8 },
-  apText: { color: '#9a9ab0', fontSize: 11, marginTop: 4, marginBottom: 4 },
-  resultBox: { marginHorizontal: 16, backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 10, padding: 10, marginTop: 4 },
-  resultText: { color: '#f5b400', fontSize: 12, fontWeight: '700' },
-  container: { padding: 16, paddingBottom: 48 },
-  categoryBlock: { marginBottom: 18 },
-  categoryTitle: { color: '#fff', fontWeight: '800', fontSize: 14, marginBottom: 8 },
-  stageRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(30,20,58,0.78)',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 8,
+  root: { flex: 1 },
+  safe: { flex: 1 },
+  title: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginTop: 12,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowRadius: 6,
   },
-  stageInfo: { flexShrink: 1 },
-  stageName: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  stageReward: { color: '#9a9ab0', fontSize: 11, marginTop: 3 },
-  apCostBadge: { backgroundColor: '#7c5cff', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  apCostText: { color: '#fff', fontWeight: '700', fontSize: 11 },
 });
