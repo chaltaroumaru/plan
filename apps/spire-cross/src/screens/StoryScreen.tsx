@@ -177,8 +177,6 @@ export default function StoryScreen({
               <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
             </Pressable>
           )}
-          <Text style={styles.title}>ストーリー</Text>
-          <Text style={styles.subtitle}>塔を昇る旅人の物語を、章ごとに読み進める</Text>
         </View>
         <ScrollView contentContainerStyle={styles.container}>{chapterList(false)}</ScrollView>
       </SafeAreaView>
@@ -204,7 +202,6 @@ export default function StoryScreen({
               <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
             </Pressable>
           )}
-          <Text style={styles.compactTitle}>ストーリー</Text>
         </View>
       </SafeAreaView>
       <View style={[styles.panelBox, { left: panel.left, top: panel.top, width: panel.width, height: panel.height }]}>

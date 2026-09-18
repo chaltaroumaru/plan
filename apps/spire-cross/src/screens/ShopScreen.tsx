@@ -14,7 +14,6 @@ export default function ShopScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>屋台</Text>
         <Text style={styles.subtitle}>拠点の隅に店を構える、旅の道具屋。</Text>
 
         <View style={styles.walletRow}>

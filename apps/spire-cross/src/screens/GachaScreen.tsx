@@ -156,7 +156,6 @@ export default function GachaScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>ガチャ</Text>
         <View style={styles.walletChip}>
           <Text style={styles.walletText}>💎 交界石 {profile.stones}</Text>
         </View>

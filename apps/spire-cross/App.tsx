@@ -10,7 +10,7 @@ import { enableScreens } from 'react-native-screens';
 // 非表示タブの display:none が効かず前の画面が透けて見えるため、明示的に有効化する。
 enableScreens();
 import { GameProvider, useGame } from './src/state/GameContext';
-import AppBackground, { THEME } from './src/components/AppBackground';
+import { THEME } from './src/components/AppBackground';
 import HomeScreen from './src/screens/HomeScreen';
 import DungeonScreen from './src/screens/DungeonScreen';
 import StoryScreen from './src/screens/StoryScreen';
@@ -18,6 +18,8 @@ import CharactersScreen from './src/screens/CharactersScreen';
 import GachaScreen from './src/screens/GachaScreen';
 import ShopScreen from './src/screens/ShopScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import MissionScreen from './src/screens/MissionScreen';
+import NewsScreen from './src/screens/NewsScreen';
 import TravelerCreateView from './src/screens/TravelerCreateView';
 
 const Tab = createBottomTabNavigator();
@@ -35,10 +37,7 @@ const theme = {
 
 const TAB_ICON: Record<string, string> = {
   ホーム: '🏠',
-  ダンジョン: '🗺️',
-  ストーリー: '📖',
-  キャラ: '👥',
-  ガチャ: '🎰',
+  ミッション: '🎯',
   設定: '⚙️',
 };
 
@@ -70,13 +69,16 @@ function AppNavigator() {
         })}
       >
         <Tab.Screen name="ホーム" component={HomeScreen} />
-        <Tab.Screen name="ダンジョン" component={DungeonScreen} />
-        <Tab.Screen name="ストーリー" component={StoryScreen} />
-        <Tab.Screen name="キャラ" component={CharactersScreen} />
-        <Tab.Screen name="ガチャ" component={GachaScreen} />
-        {/* ホーム画面の屋台をタップして入る場所のため、下部タブバーには出さない */}
-        <Tab.Screen name="ショップ" component={ShopScreen} options={{ tabBarButton: () => null }} />
+        <Tab.Screen name="ミッション" component={MissionScreen} />
         <Tab.Screen name="設定" component={SettingsScreen} />
+        {/* 以下はホーム画面の塔・宿・屋台・魔法陣・お知らせ枠をタップして入る場所のため、
+            下部タブバーには出さない(navigation.navigate は維持する)。 */}
+        <Tab.Screen name="ダンジョン" component={DungeonScreen} options={{ tabBarButton: () => null }} />
+        <Tab.Screen name="ストーリー" component={StoryScreen} options={{ tabBarButton: () => null }} />
+        <Tab.Screen name="キャラ" component={CharactersScreen} options={{ tabBarButton: () => null }} />
+        <Tab.Screen name="ガチャ" component={GachaScreen} options={{ tabBarButton: () => null }} />
+        <Tab.Screen name="ショップ" component={ShopScreen} options={{ tabBarButton: () => null }} />
+        <Tab.Screen name="お知らせ" component={NewsScreen} options={{ tabBarButton: () => null }} />
       </Tab.Navigator>
     </NavigationContainer>
   );
@@ -104,7 +106,6 @@ export default function App() {
   return (
     <View style={styles.outer}>
       <View style={styles.frame}>
-        <AppBackground />
         <SafeAreaProvider>
           <GameProvider>
             <AppGate />

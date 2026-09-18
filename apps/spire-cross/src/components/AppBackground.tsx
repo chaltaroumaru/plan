@@ -19,7 +19,7 @@ export const THEME = {
 // 塔の見え方がずれないよう、幅基準でスケールして上端を揃える。
 // ホーム画面のマップホットスポット(HomeMapHotspots)もこの比率を使って
 // イラスト上の建物・魔法陣の座標を計算するため、ここから公開している。
-export const HOME_IMAGE_ASPECT_RATIO = 940 / 1672;
+export const HOME_IMAGE_ASPECT_RATIO = 940 / 1674;
 const IMAGE_ASPECT_RATIO = HOME_IMAGE_ASPECT_RATIO;
 
 /**

@@ -62,8 +62,6 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>設定</Text>
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔊 音声設定</Text>
           <ToggleRow

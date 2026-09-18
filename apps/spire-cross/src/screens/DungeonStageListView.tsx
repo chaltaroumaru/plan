@@ -149,7 +149,6 @@ export default function DungeonStageListView({
           <Pressable onPress={onBack}>
             <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
           </Pressable>
-          <Text style={styles.title}>{title}</Text>
           <Bar value={ap.current} max={AP_MAX} color={THEME.violet} height={12} />
           <Text style={styles.apText}>
             AP {ap.current}/{AP_MAX} {ap.current < AP_MAX ? `(次の回復まで約${minutesLeft}分)` : ''}
@@ -177,7 +176,6 @@ export default function DungeonStageListView({
           <Pressable onPress={onBack}>
             <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
           </Pressable>
-          <Text style={styles.compactTitle}>{title}</Text>
           <Bar value={ap.current} max={AP_MAX} color={THEME.violet} height={8} />
           <Text style={styles.apTextCompact}>
             AP {ap.current}/{AP_MAX}

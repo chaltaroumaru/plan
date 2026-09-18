@@ -65,7 +65,6 @@ export default function CharactersScreen() {
           <Pressable onPress={backToHub}>
             <Text style={styles.backLink}>← キャラクターへ戻る</Text>
           </Pressable>
-          <Text style={styles.title}>キャラクター一覧</Text>
           <Text style={styles.subtitle}>
             {Object.keys(profile.ownedCharacterCounts).length} / {getRosterCharacters().length} 体所持
           </Text>
@@ -98,7 +97,6 @@ export default function CharactersScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>キャラクター</Text>
         <Text style={styles.subtitle}>
           {Object.keys(profile.ownedCharacterCounts).length} / {getRosterCharacters().length} 体所持
         </Text>

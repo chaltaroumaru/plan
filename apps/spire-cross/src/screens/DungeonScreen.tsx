@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, View, Pressable } from 'react-native';
 import ScreenBackground, {
   DUNGEON_PANEL_FRAME_TRAINING,
   DUNGEON_PANEL_FRAME_STORY,
@@ -119,23 +118,10 @@ export default function DungeonScreen() {
           ))
         }
       </ScreenBackground>
-      <SafeAreaView style={styles.safe} edges={['top']} pointerEvents="box-none">
-        <Text style={styles.title}>塔の中心</Text>
-      </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  safe: { flex: 1 },
-  title: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginTop: 12,
-    textShadowColor: 'rgba(0,0,0,0.6)',
-    textShadowRadius: 6,
-  },
 });
