@@ -9,7 +9,7 @@ import { CharacterDef, CharacterProgress, StoryStageDef } from '../types';
 import { grantExp } from '../game/leveling';
 import BattleView from './BattleView';
 import NarrativeReader from '../components/NarrativeReader';
-import ScreenBackground from '../components/ScreenBackground';
+import ScreenBackground, { DUNGEON_PANEL_FRAME, useTopAlignedImageSize } from '../components/ScreenBackground';
 
 type Phase = 'list' | 'intro' | 'battle' | 'outro';
 
@@ -29,6 +29,7 @@ export default function StoryScreen({
   const [phase, setPhase] = useState<Phase>('list');
   const [activeStage, setActiveStage] = useState<StoryStageDef | null>(null);
   const [resultText, setResultText] = useState<string | null>(null);
+  const imgSize = useTopAlignedImageSize(background?.aspectRatio ?? 1);
 
   const partyMembers = profile.partyIds
     .map((id) => {
@@ -119,70 +120,95 @@ export default function StoryScreen({
     );
   }
 
-  const listContent = (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        {onBack && (
-          <Pressable onPress={onBack}>
-            <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
-          </Pressable>
-        )}
-        <Text style={styles.title}>ストーリー</Text>
-        <Text style={styles.subtitle}>塔を昇る旅人の物語を、章ごとに読み進める</Text>
-      </View>
-
+  const chapterList = (compact: boolean) => (
+    <>
       {resultText && (
         <View style={styles.resultBox}>
           <Text style={styles.resultText}>{resultText}</Text>
         </View>
       )}
-
-      <ScrollView contentContainerStyle={styles.container}>
-        {STORY_CHAPTERS.map(({ chapter, title: chapterTitle }) => {
-          const chapterStages = STORY_STAGES.filter((s) => s.chapter === chapter).sort(
-            (a, b) => a.order - b.order
-          );
-          return (
-            <View key={chapter} style={styles.chapterBlock}>
-              <Text style={styles.chapterHeading}>
-                第{chapter}章 「{chapterTitle}」
-              </Text>
-              {chapterStages.map((stage) => {
-                const cleared = profile.clearedStoryStageIds.includes(stage.id);
-                const unlocked = isStoryStageUnlocked(stage, profile.clearedStoryStageIds);
-                return (
-                  <Pressable
-                    key={stage.id}
-                    style={[styles.stageCard, !unlocked && styles.locked]}
-                    disabled={!unlocked}
-                    onPress={() => startStage(stage)}
-                  >
-                    <View style={styles.stageHeaderRow}>
-                      <Text style={styles.stageTitle}>
-                        {stage.order}. {stage.title}
-                      </Text>
-                      {cleared && <Text style={styles.clearedBadge}>クリア済み</Text>}
-                      {!unlocked && <Text style={styles.lockedBadge}>🔒</Text>}
-                    </View>
-                    <Text style={styles.flavorText}>{stage.flavorText}</Text>
-                    <Text style={styles.rewardText}>
-                      💰{stage.rewardGold} ・ 💎{stage.rewardStones} ・ EXP{stage.rewardExp}
+      {STORY_CHAPTERS.map(({ chapter, title: chapterTitle }) => {
+        const chapterStages = STORY_STAGES.filter((s) => s.chapter === chapter).sort(
+          (a, b) => a.order - b.order
+        );
+        return (
+          <View key={chapter} style={styles.chapterBlock}>
+            <Text style={[styles.chapterHeading, compact && styles.chapterHeadingCompact]}>
+              第{chapter}章 「{chapterTitle}」
+            </Text>
+            {chapterStages.map((stage) => {
+              const cleared = profile.clearedStoryStageIds.includes(stage.id);
+              const unlocked = isStoryStageUnlocked(stage, profile.clearedStoryStageIds);
+              return (
+                <Pressable
+                  key={stage.id}
+                  style={[styles.stageCard, compact && styles.stageCardCompact, !unlocked && styles.locked]}
+                  disabled={!unlocked}
+                  onPress={() => startStage(stage)}
+                >
+                  <View style={styles.stageHeaderRow}>
+                    <Text style={[styles.stageTitle, compact && styles.stageTitleCompact]}>
+                      {stage.order}. {stage.title}
                     </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          );
-        })}
-      </ScrollView>
-    </SafeAreaView>
+                    {cleared && <Text style={styles.clearedBadge}>クリア済み</Text>}
+                    {!unlocked && <Text style={styles.lockedBadge}>🔒</Text>}
+                  </View>
+                  <Text style={[styles.flavorText, compact && styles.flavorTextCompact]}>{stage.flavorText}</Text>
+                  <Text style={[styles.rewardText, compact && styles.rewardTextCompact]}>
+                    💰{stage.rewardGold} ・ 💎{stage.rewardStones} ・ EXP{stage.rewardExp}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        );
+      })}
+    </>
   );
 
-  if (!background) return listContent;
+  if (!background) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.header}>
+          {onBack && (
+            <Pressable onPress={onBack}>
+              <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
+            </Pressable>
+          )}
+          <Text style={styles.title}>ストーリー</Text>
+          <Text style={styles.subtitle}>塔を昇る旅人の物語を、章ごとに読み進める</Text>
+        </View>
+        <ScrollView contentContainerStyle={styles.container}>{chapterList(false)}</ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // 背景付き: 塔内部のクリスタルパネル枠の中に章一覧を収める。
+  const panel = {
+    left: imgSize.width * DUNGEON_PANEL_FRAME.left,
+    top: imgSize.height * DUNGEON_PANEL_FRAME.top,
+    width: imgSize.width * DUNGEON_PANEL_FRAME.width,
+    height: imgSize.height * DUNGEON_PANEL_FRAME.height,
+  };
+
   return (
     <View style={{ flex: 1 }}>
-      <ScreenBackground source={background.source} aspectRatio={background.aspectRatio} dim={0.15} cover />
-      {listContent}
+      <ScreenBackground source={background.source} aspectRatio={background.aspectRatio} dim={0.08} />
+      <SafeAreaView style={styles.safe} edges={['top']} pointerEvents="box-none">
+        <View style={styles.compactHeader} pointerEvents="box-none">
+          {onBack && (
+            <Pressable onPress={onBack}>
+              <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
+            </Pressable>
+          )}
+          <Text style={styles.compactTitle}>ストーリー</Text>
+        </View>
+      </SafeAreaView>
+      <View style={[styles.panelBox, { left: panel.left, top: panel.top, width: panel.width, height: panel.height }]}>
+        <ScrollView contentContainerStyle={styles.panelContent} showsVerticalScrollIndicator={false}>
+          {chapterList(true)}
+        </ScrollView>
+      </View>
     </View>
   );
 }
@@ -204,12 +230,29 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 10,
   },
+  chapterHeadingCompact: { fontSize: 11, marginBottom: 6 },
   stageCard: { backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 12, padding: 14, marginBottom: 10 },
+  stageCardCompact: { padding: 9, borderRadius: 9, marginBottom: 6 },
   locked: { opacity: 0.4 },
   stageHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   stageTitle: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  stageTitleCompact: { fontSize: 11 },
   clearedBadge: { color: '#5fae6b', fontSize: 11, fontWeight: '700' },
   lockedBadge: { fontSize: 14 },
   flavorText: { color: '#c4c4d4', fontSize: 12, marginTop: 6, lineHeight: 18 },
+  flavorTextCompact: { fontSize: 10, marginTop: 4, lineHeight: 14 },
   rewardText: { color: '#9a9ab0', fontSize: 11, marginTop: 8 },
+  rewardTextCompact: { fontSize: 9, marginTop: 4 },
+  compactHeader: {
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    backgroundColor: 'rgba(10,6,24,0.55)',
+  },
+  compactTitle: { fontSize: 16, fontWeight: '800', color: '#fff', marginTop: 2, marginBottom: 6 },
+  panelBox: {
+    position: 'absolute',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  panelContent: { padding: 10, paddingBottom: 24 },
 });

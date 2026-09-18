@@ -5,6 +5,21 @@ import { THEME } from './AppBackground';
 const FRAME_MAX_WIDTH = 480;
 
 /**
+ * ダンジョンの塔内部パネル背景(育成/ストーリー/イベント)に共通で描かれている、
+ * 中央のクリスタルパネル枠の位置(画像内での比率)。この枠の中にリストUIを
+ * 収める形で各画面を組んでいる。
+ */
+export const DUNGEON_PANEL_FRAME = { left: 0.239, top: 0.228, width: 0.568, height: 0.461 };
+
+/** 幅基準・上端揃え(cover未使用時)で表示した場合の、画像の実表示サイズ。 */
+export function useTopAlignedImageSize(aspectRatio: number) {
+  const { width: windowWidth } = useWindowDimensions();
+  const width = Math.min(windowWidth, FRAME_MAX_WIDTH);
+  const height = width / aspectRatio;
+  return { width, height };
+}
+
+/**
  * 個別画面(ダンジョン/キャラ/ガチャ等)専用の背景イラストを、画面幅いっぱい・
  * 上端揃えで敷く共通コンポーネント。AppBackground と同じ理由(react-native-web
  * で width:'100%'+aspectRatio の組み合わせだと高さが実ピクセル値のまま使われる

@@ -10,7 +10,7 @@ import { CharacterDef, CharacterProgress, DungeonCategory, DungeonStageDef } fro
 import { consumeAp, minutesUntilNextAp, recoverAp } from '../game/ap';
 import Bar from '../components/Bar';
 import BattleView from './BattleView';
-import ScreenBackground from '../components/ScreenBackground';
+import ScreenBackground, { DUNGEON_PANEL_FRAME, useTopAlignedImageSize } from '../components/ScreenBackground';
 
 /**
  * ダンジョンのステージ一覧+戦闘フロー。「育成ダンジョン」「イベントダンジョン」
@@ -35,6 +35,7 @@ export default function DungeonStageListView({
 
   const ap = useMemo(() => recoverAp(profile.ap), [profile.ap]);
   const minutesLeft = useMemo(() => minutesUntilNextAp(profile.ap), [profile.ap]);
+  const imgSize = useTopAlignedImageSize(background?.aspectRatio ?? 1);
 
   const partyMembers = profile.partyIds
     .map((id) => {
@@ -101,59 +102,90 @@ export default function DungeonStageListView({
     );
   }
 
-  const content = (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={onBack}>
-          <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
-        </Pressable>
-        <Text style={styles.title}>{title}</Text>
-        <Bar value={ap.current} max={AP_MAX} color="#7c5cff" height={12} />
-        <Text style={styles.apText}>
-          AP {ap.current}/{AP_MAX} {ap.current < AP_MAX ? `(次の回復まで約${minutesLeft}分)` : ''}
-        </Text>
-      </View>
-
+  const stageList = (compact: boolean) => (
+    <>
       {resultText && (
         <View style={styles.resultBox}>
           <Text style={styles.resultText}>{resultText}</Text>
         </View>
       )}
-
-      <ScrollView contentContainerStyle={styles.container}>
-        {categories.map((category) => (
-          <View key={category} style={styles.categoryBlock}>
-            <Text style={styles.categoryTitle}>
-              {DUNGEON_CATEGORY_EMOJI[category]} {DUNGEON_CATEGORY_LABEL[category]}
-            </Text>
-            {DUNGEON_STAGES.filter((s) => s.category === category).map((stage) => (
-              <Pressable key={stage.id} style={styles.stageRow} onPress={() => startStage(stage)}>
-                <View style={styles.stageInfo}>
-                  <Text style={styles.stageName}>{stage.name}</Text>
-                  <Text style={styles.stageReward}>
-                    💰{stage.rewardGold}
-                    {stage.rewardMaterial
-                      ? ` ・ ${MATERIAL_EMOJI[stage.rewardMaterial.type]}${MATERIAL_LABEL[stage.rewardMaterial.type]}+${stage.rewardMaterial.amount}`
-                      : ''}
-                    {stage.rewardStones > 0 ? ` ・ 💎+${stage.rewardStones}` : ''}
-                  </Text>
-                </View>
-                <View style={styles.apCostBadge}>
-                  <Text style={styles.apCostText}>AP {stage.apCost}</Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        ))}
-      </ScrollView>
-    </SafeAreaView>
+      {categories.map((category) => (
+        <View key={category} style={styles.categoryBlock}>
+          <Text style={[styles.categoryTitle, compact && styles.categoryTitleCompact]}>
+            {DUNGEON_CATEGORY_EMOJI[category]} {DUNGEON_CATEGORY_LABEL[category]}
+          </Text>
+          {DUNGEON_STAGES.filter((s) => s.category === category).map((stage) => (
+            <Pressable
+              key={stage.id}
+              style={[styles.stageRow, compact && styles.stageRowCompact]}
+              onPress={() => startStage(stage)}
+            >
+              <View style={styles.stageInfo}>
+                <Text style={[styles.stageName, compact && styles.stageNameCompact]}>{stage.name}</Text>
+                <Text style={[styles.stageReward, compact && styles.stageRewardCompact]}>
+                  💰{stage.rewardGold}
+                  {stage.rewardMaterial
+                    ? ` ・ ${MATERIAL_EMOJI[stage.rewardMaterial.type]}${MATERIAL_LABEL[stage.rewardMaterial.type]}+${stage.rewardMaterial.amount}`
+                    : ''}
+                  {stage.rewardStones > 0 ? ` ・ 💎+${stage.rewardStones}` : ''}
+                </Text>
+              </View>
+              <View style={styles.apCostBadge}>
+                <Text style={styles.apCostText}>AP {stage.apCost}</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      ))}
+    </>
   );
 
-  if (!background) return content;
+  if (!background) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.header}>
+          <Pressable onPress={onBack}>
+            <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
+          </Pressable>
+          <Text style={styles.title}>{title}</Text>
+          <Bar value={ap.current} max={AP_MAX} color="#7c5cff" height={12} />
+          <Text style={styles.apText}>
+            AP {ap.current}/{AP_MAX} {ap.current < AP_MAX ? `(次の回復まで約${minutesLeft}分)` : ''}
+          </Text>
+        </View>
+        <ScrollView contentContainerStyle={styles.container}>{stageList(false)}</ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // 背景付き: 塔内部のクリスタルパネル枠の中にステージ一覧を収める。
+  const panel = {
+    left: imgSize.width * DUNGEON_PANEL_FRAME.left,
+    top: imgSize.height * DUNGEON_PANEL_FRAME.top,
+    width: imgSize.width * DUNGEON_PANEL_FRAME.width,
+    height: imgSize.height * DUNGEON_PANEL_FRAME.height,
+  };
+
   return (
     <View style={{ flex: 1 }}>
-      <ScreenBackground source={background.source} aspectRatio={background.aspectRatio} dim={0.15} cover />
-      {content}
+      <ScreenBackground source={background.source} aspectRatio={background.aspectRatio} dim={0.08} />
+      <SafeAreaView style={styles.safe} edges={['top']} pointerEvents="box-none">
+        <View style={styles.compactHeader} pointerEvents="box-none">
+          <Pressable onPress={onBack}>
+            <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
+          </Pressable>
+          <Text style={styles.compactTitle}>{title}</Text>
+          <Bar value={ap.current} max={AP_MAX} color="#7c5cff" height={8} />
+          <Text style={styles.apTextCompact}>
+            AP {ap.current}/{AP_MAX}
+          </Text>
+        </View>
+      </SafeAreaView>
+      <View style={[styles.panelBox, { left: panel.left, top: panel.top, width: panel.width, height: panel.height }]}>
+        <ScrollView contentContainerStyle={styles.panelContent} showsVerticalScrollIndicator={false}>
+          {stageList(true)}
+        </ScrollView>
+      </View>
     </View>
   );
 }
@@ -169,6 +201,7 @@ const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 48 },
   categoryBlock: { marginBottom: 18 },
   categoryTitle: { color: '#fff', fontWeight: '800', fontSize: 14, marginBottom: 8 },
+  categoryTitleCompact: { fontSize: 12, marginBottom: 6 },
   stageRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -178,9 +211,25 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
   },
+  stageRowCompact: { padding: 8, marginBottom: 6, borderRadius: 8 },
   stageInfo: { flexShrink: 1 },
   stageName: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  stageNameCompact: { fontSize: 11 },
   stageReward: { color: '#9a9ab0', fontSize: 11, marginTop: 3 },
+  stageRewardCompact: { fontSize: 9, marginTop: 2 },
   apCostBadge: { backgroundColor: '#7c5cff', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
   apCostText: { color: '#fff', fontWeight: '700', fontSize: 11 },
+  compactHeader: {
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    backgroundColor: 'rgba(10,6,24,0.55)',
+  },
+  compactTitle: { fontSize: 16, fontWeight: '800', color: '#fff', marginBottom: 6 },
+  apTextCompact: { color: '#c4c4d4', fontSize: 10, marginTop: 3, marginBottom: 2 },
+  panelBox: {
+    position: 'absolute',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  panelContent: { padding: 10, paddingBottom: 24 },
 });
