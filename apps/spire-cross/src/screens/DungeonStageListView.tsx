@@ -11,6 +11,7 @@ import { consumeAp, minutesUntilNextAp, recoverAp } from '../game/ap';
 import Bar from '../components/Bar';
 import BattleView from './BattleView';
 import ScreenBackground, { DUNGEON_PANEL_FRAME_TRAINING, PanelFrame, useTopAlignedImageSize } from '../components/ScreenBackground';
+import { THEME } from '../components/AppBackground';
 
 /**
  * ダンジョンのステージ一覧+戦闘フロー。「育成ダンジョン」「イベントダンジョン」
@@ -114,6 +115,7 @@ export default function DungeonStageListView({
           <Text style={[styles.categoryTitle, compact && styles.categoryTitleCompact]}>
             {DUNGEON_CATEGORY_EMOJI[category]} {DUNGEON_CATEGORY_LABEL[category]}
           </Text>
+          <View style={[styles.categoryDivider, compact && styles.categoryDividerCompact]} />
           {DUNGEON_STAGES.filter((s) => s.category === category).map((stage) => (
             <Pressable
               key={stage.id}
@@ -148,7 +150,7 @@ export default function DungeonStageListView({
             <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
           </Pressable>
           <Text style={styles.title}>{title}</Text>
-          <Bar value={ap.current} max={AP_MAX} color="#7c5cff" height={12} />
+          <Bar value={ap.current} max={AP_MAX} color={THEME.violet} height={12} />
           <Text style={styles.apText}>
             AP {ap.current}/{AP_MAX} {ap.current < AP_MAX ? `(次の回復まで約${minutesLeft}分)` : ''}
           </Text>
@@ -176,7 +178,7 @@ export default function DungeonStageListView({
             <Text style={styles.backLink}>← 塔の中心へ戻る</Text>
           </Pressable>
           <Text style={styles.compactTitle}>{title}</Text>
-          <Bar value={ap.current} max={AP_MAX} color="#7c5cff" height={8} />
+          <Bar value={ap.current} max={AP_MAX} color={THEME.violet} height={8} />
           <Text style={styles.apTextCompact}>
             AP {ap.current}/{AP_MAX}
           </Text>
@@ -194,43 +196,90 @@ export default function DungeonStageListView({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: 16, paddingTop: 8 },
-  backLink: { color: '#7c5cff', fontSize: 13, marginBottom: 10 },
-  title: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 8 },
-  apText: { color: '#9a9ab0', fontSize: 11, marginTop: 4, marginBottom: 4 },
-  resultBox: { marginHorizontal: 16, backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 10, padding: 10, marginTop: 4 },
-  resultText: { color: '#f5b400', fontSize: 12, fontWeight: '700' },
+  backLink: { color: THEME.lavender, fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginBottom: 10 },
+  title: {
+    fontSize: 21,
+    fontWeight: '800',
+    color: THEME.gold,
+    letterSpacing: 1,
+    marginBottom: 8,
+    textShadowColor: 'rgba(255,215,106,0.35)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+  apText: { color: THEME.lavender, fontSize: 11, marginTop: 4, marginBottom: 4, letterSpacing: 0.3 },
+  resultBox: {
+    marginHorizontal: 16,
+    backgroundColor: 'rgba(20,14,46,0.85)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,106,0.3)',
+    padding: 10,
+    marginTop: 4,
+  },
+  resultText: { color: THEME.gold, fontSize: 12, fontWeight: '700' },
   container: { padding: 16, paddingBottom: 48 },
   categoryBlock: { marginBottom: 18 },
-  categoryTitle: { color: '#fff', fontWeight: '800', fontSize: 14, marginBottom: 8 },
-  categoryTitleCompact: { fontSize: 12, marginBottom: 6 },
+  categoryTitle: { color: THEME.gold, fontWeight: '800', fontSize: 14, letterSpacing: 1.2 },
+  categoryTitleCompact: { fontSize: 12 },
+  categoryDivider: {
+    width: 40,
+    height: 2,
+    backgroundColor: 'rgba(255,215,106,0.45)',
+    borderRadius: 1,
+    marginTop: 5,
+    marginBottom: 10,
+  },
+  categoryDividerCompact: { width: 26, height: 1.5, marginTop: 3, marginBottom: 6 },
   stageRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(30,20,58,0.78)',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 8,
+    backgroundColor: 'rgba(22,15,48,0.76)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(201,184,255,0.16)',
+    padding: 13,
+    marginBottom: 9,
   },
-  stageRowCompact: { padding: 8, marginBottom: 6, borderRadius: 8 },
+  stageRowCompact: { padding: 9, marginBottom: 6, borderRadius: 9, borderColor: 'rgba(201,184,255,0.12)' },
   stageInfo: { flexShrink: 1 },
-  stageName: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  stageName: { color: '#f4f1ff', fontWeight: '700', fontSize: 13, letterSpacing: 0.2 },
   stageNameCompact: { fontSize: 11 },
-  stageReward: { color: '#9a9ab0', fontSize: 11, marginTop: 3 },
+  stageReward: { color: THEME.lavender, fontSize: 11, marginTop: 4, opacity: 0.85 },
   stageRewardCompact: { fontSize: 9, marginTop: 2 },
-  apCostBadge: { backgroundColor: '#7c5cff', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  apCostText: { color: '#fff', fontWeight: '700', fontSize: 11 },
-  compactHeader: {
-    paddingHorizontal: 14,
-    paddingTop: 6,
-    backgroundColor: 'rgba(10,6,24,0.55)',
+  apCostBadge: {
+    backgroundColor: THEME.violet,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,106,0.4)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  compactTitle: { fontSize: 16, fontWeight: '800', color: '#fff', marginBottom: 6 },
-  apTextCompact: { color: '#c4c4d4', fontSize: 10, marginTop: 3, marginBottom: 2 },
+  apCostText: { color: '#fff', fontWeight: '700', fontSize: 11, letterSpacing: 0.3 },
+  compactHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
+    backgroundColor: 'rgba(8,5,20,0.6)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(201,184,255,0.22)',
+  },
+  compactTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: THEME.gold,
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    textShadowColor: 'rgba(255,215,106,0.35)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+  apTextCompact: { color: THEME.lavender, fontSize: 10, marginTop: 4, marginBottom: 2, letterSpacing: 0.3 },
   panelBox: {
     position: 'absolute',
     borderRadius: 10,
     overflow: 'hidden',
   },
-  panelContent: { padding: 10, paddingBottom: 24 },
+  panelContent: { padding: 12, paddingTop: 14, paddingBottom: 28 },
 });

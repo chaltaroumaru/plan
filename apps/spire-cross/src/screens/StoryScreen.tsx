@@ -10,6 +10,7 @@ import { grantExp } from '../game/leveling';
 import BattleView from './BattleView';
 import NarrativeReader from '../components/NarrativeReader';
 import ScreenBackground, { DUNGEON_PANEL_FRAME_TRAINING, PanelFrame, useTopAlignedImageSize } from '../components/ScreenBackground';
+import { THEME } from '../components/AppBackground';
 
 type Phase = 'list' | 'intro' | 'battle' | 'outro';
 
@@ -136,6 +137,7 @@ export default function StoryScreen({
             <Text style={[styles.chapterHeading, compact && styles.chapterHeadingCompact]}>
               第{chapter}章 「{chapterTitle}」
             </Text>
+            <View style={[styles.chapterDivider, compact && styles.chapterDividerCompact]} />
             {chapterStages.map((stage) => {
               const cleared = profile.clearedStoryStageIds.includes(stage.id);
               const unlocked = isStoryStageUnlocked(stage, profile.clearedStoryStageIds);
@@ -217,43 +219,86 @@ export default function StoryScreen({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: 16, paddingTop: 8 },
-  backLink: { color: '#7c5cff', fontSize: 13, marginBottom: 10 },
-  title: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  subtitle: { color: '#9a9ab0', fontSize: 12, marginTop: 4, marginBottom: 4 },
-  resultBox: { marginHorizontal: 16, backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 10, padding: 10, marginTop: 4 },
-  resultText: { color: '#f5b400', fontSize: 12, fontWeight: '700' },
+  backLink: { color: THEME.lavender, fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginBottom: 10 },
+  title: {
+    fontSize: 21,
+    fontWeight: '800',
+    color: THEME.gold,
+    letterSpacing: 1,
+    textShadowColor: 'rgba(255,215,106,0.35)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+  subtitle: { color: THEME.lavender, fontSize: 12, marginTop: 4, marginBottom: 4, opacity: 0.85 },
+  resultBox: {
+    marginHorizontal: 16,
+    backgroundColor: 'rgba(20,14,46,0.85)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,215,106,0.3)',
+    padding: 10,
+    marginTop: 4,
+  },
+  resultText: { color: THEME.gold, fontSize: 12, fontWeight: '700' },
   container: { padding: 16, paddingBottom: 48 },
   chapterBlock: { marginBottom: 20 },
   chapterHeading: {
-    color: '#c9b8ff',
+    color: THEME.gold,
     fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
+  },
+  chapterHeadingCompact: { fontSize: 11 },
+  chapterDivider: {
+    width: 40,
+    height: 2,
+    backgroundColor: 'rgba(255,215,106,0.45)',
+    borderRadius: 1,
+    marginTop: 5,
     marginBottom: 10,
   },
-  chapterHeadingCompact: { fontSize: 11, marginBottom: 6 },
-  stageCard: { backgroundColor: 'rgba(30,20,58,0.78)', borderRadius: 12, padding: 14, marginBottom: 10 },
-  stageCardCompact: { padding: 9, borderRadius: 9, marginBottom: 6 },
+  chapterDividerCompact: { width: 26, height: 1.5, marginTop: 3, marginBottom: 6 },
+  stageCard: {
+    backgroundColor: 'rgba(22,15,48,0.76)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(201,184,255,0.16)',
+    padding: 14,
+    marginBottom: 10,
+  },
+  stageCardCompact: { padding: 9, borderRadius: 9, marginBottom: 6, borderColor: 'rgba(201,184,255,0.12)' },
   locked: { opacity: 0.4 },
   stageHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  stageTitle: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  stageTitle: { color: '#f4f1ff', fontWeight: '800', fontSize: 14, letterSpacing: 0.2 },
   stageTitleCompact: { fontSize: 11 },
-  clearedBadge: { color: '#5fae6b', fontSize: 11, fontWeight: '700' },
+  clearedBadge: { color: THEME.teal, fontSize: 11, fontWeight: '700' },
   lockedBadge: { fontSize: 14 },
-  flavorText: { color: '#c4c4d4', fontSize: 12, marginTop: 6, lineHeight: 18 },
+  flavorText: { color: THEME.lavender, fontSize: 12, marginTop: 6, lineHeight: 18, opacity: 0.85 },
   flavorTextCompact: { fontSize: 10, marginTop: 4, lineHeight: 14 },
-  rewardText: { color: '#9a9ab0', fontSize: 11, marginTop: 8 },
+  rewardText: { color: THEME.lavender, fontSize: 11, marginTop: 8, opacity: 0.7 },
   rewardTextCompact: { fontSize: 9, marginTop: 4 },
   compactHeader: {
-    paddingHorizontal: 14,
-    paddingTop: 6,
-    backgroundColor: 'rgba(10,6,24,0.55)',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
+    backgroundColor: 'rgba(8,5,20,0.6)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(201,184,255,0.22)',
   },
-  compactTitle: { fontSize: 16, fontWeight: '800', color: '#fff', marginTop: 2, marginBottom: 6 },
+  compactTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: THEME.gold,
+    letterSpacing: 1.2,
+    marginTop: 2,
+    textShadowColor: 'rgba(255,215,106,0.35)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
   panelBox: {
     position: 'absolute',
     borderRadius: 10,
     overflow: 'hidden',
   },
-  panelContent: { padding: 10, paddingBottom: 24 },
+  panelContent: { padding: 12, paddingTop: 14, paddingBottom: 28 },
 });
