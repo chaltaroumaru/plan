@@ -9,7 +9,7 @@ import { CharacterDef, CharacterProgress, StoryStageDef } from '../types';
 import { grantExp } from '../game/leveling';
 import BattleView from './BattleView';
 import NarrativeReader from '../components/NarrativeReader';
-import ScreenBackground, { DUNGEON_PANEL_FRAME, useTopAlignedImageSize } from '../components/ScreenBackground';
+import ScreenBackground, { DUNGEON_PANEL_FRAME_TRAINING, PanelFrame, useTopAlignedImageSize } from '../components/ScreenBackground';
 
 type Phase = 'list' | 'intro' | 'battle' | 'outro';
 
@@ -22,7 +22,7 @@ export default function StoryScreen({
   background,
   onBack,
 }: {
-  background?: { source: ImageSourcePropType; aspectRatio: number };
+  background?: { source: ImageSourcePropType; aspectRatio: number; panelFrame?: PanelFrame };
   onBack?: () => void;
 } = {}) {
   const { profile, updateProfile } = useGame();
@@ -184,11 +184,12 @@ export default function StoryScreen({
   }
 
   // 背景付き: 塔内部のクリスタルパネル枠の中に章一覧を収める。
+  const frame = background.panelFrame ?? DUNGEON_PANEL_FRAME_TRAINING;
   const panel = {
-    left: imgSize.width * DUNGEON_PANEL_FRAME.left,
-    top: imgSize.height * DUNGEON_PANEL_FRAME.top,
-    width: imgSize.width * DUNGEON_PANEL_FRAME.width,
-    height: imgSize.height * DUNGEON_PANEL_FRAME.height,
+    left: imgSize.width * frame.left,
+    top: imgSize.height * frame.top,
+    width: imgSize.width * frame.width,
+    height: imgSize.height * frame.height,
   };
 
   return (

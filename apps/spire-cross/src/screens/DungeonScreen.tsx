@@ -1,14 +1,30 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ScreenBackground from '../components/ScreenBackground';
+import ScreenBackground, {
+  DUNGEON_PANEL_FRAME_TRAINING,
+  DUNGEON_PANEL_FRAME_STORY,
+  DUNGEON_PANEL_FRAME_EVENT,
+} from '../components/ScreenBackground';
 import DungeonStageListView from './DungeonStageListView';
 import StoryScreen from './StoryScreen';
 
 const DUNGEON_IMAGE_ASPECT_RATIO = 941 / 1672;
-const TRAINING_BG = { source: require('../../assets/backgrounds/dungeon_training_background.jpg'), aspectRatio: 942 / 1670 };
-const STORY_BG = { source: require('../../assets/backgrounds/dungeon_story_background.jpg'), aspectRatio: 942 / 1670 };
-const EVENT_BG = { source: require('../../assets/backgrounds/dungeon_event_background.jpg'), aspectRatio: 942 / 1670 };
+const TRAINING_BG = {
+  source: require('../../assets/backgrounds/dungeon_training_background.jpg'),
+  aspectRatio: 942 / 1670,
+  panelFrame: DUNGEON_PANEL_FRAME_TRAINING,
+};
+const STORY_BG = {
+  source: require('../../assets/backgrounds/dungeon_story_background.jpg'),
+  aspectRatio: 942 / 1670,
+  panelFrame: DUNGEON_PANEL_FRAME_STORY,
+};
+const EVENT_BG = {
+  source: require('../../assets/backgrounds/dungeon_event_background.jpg'),
+  aspectRatio: 942 / 1670,
+  panelFrame: DUNGEON_PANEL_FRAME_EVENT,
+};
 
 type Mode = 'hub' | 'training' | 'story' | 'event';
 

@@ -10,7 +10,7 @@ import { CharacterDef, CharacterProgress, DungeonCategory, DungeonStageDef } fro
 import { consumeAp, minutesUntilNextAp, recoverAp } from '../game/ap';
 import Bar from '../components/Bar';
 import BattleView from './BattleView';
-import ScreenBackground, { DUNGEON_PANEL_FRAME, useTopAlignedImageSize } from '../components/ScreenBackground';
+import ScreenBackground, { DUNGEON_PANEL_FRAME_TRAINING, PanelFrame, useTopAlignedImageSize } from '../components/ScreenBackground';
 
 /**
  * ダンジョンのステージ一覧+戦闘フロー。「育成ダンジョン」「イベントダンジョン」
@@ -27,7 +27,7 @@ export default function DungeonStageListView({
   title: string;
   categories: DungeonCategory[];
   onBack: () => void;
-  background?: { source: ImageSourcePropType; aspectRatio: number };
+  background?: { source: ImageSourcePropType; aspectRatio: number; panelFrame?: PanelFrame };
 }) {
   const { profile, updateProfile } = useGame();
   const [activeStage, setActiveStage] = useState<DungeonStageDef | null>(null);
@@ -159,11 +159,12 @@ export default function DungeonStageListView({
   }
 
   // 背景付き: 塔内部のクリスタルパネル枠の中にステージ一覧を収める。
+  const frame = background.panelFrame ?? DUNGEON_PANEL_FRAME_TRAINING;
   const panel = {
-    left: imgSize.width * DUNGEON_PANEL_FRAME.left,
-    top: imgSize.height * DUNGEON_PANEL_FRAME.top,
-    width: imgSize.width * DUNGEON_PANEL_FRAME.width,
-    height: imgSize.height * DUNGEON_PANEL_FRAME.height,
+    left: imgSize.width * frame.left,
+    top: imgSize.height * frame.top,
+    width: imgSize.width * frame.width,
+    height: imgSize.height * frame.height,
   };
 
   return (

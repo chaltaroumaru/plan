@@ -4,12 +4,17 @@ import { THEME } from './AppBackground';
 
 const FRAME_MAX_WIDTH = 480;
 
+export type PanelFrame = { left: number; top: number; width: number; height: number };
+
 /**
- * ダンジョンの塔内部パネル背景(育成/ストーリー/イベント)に共通で描かれている、
+ * ダンジョンの塔内部パネル背景(育成/ストーリー/イベント)に描かれている、
  * 中央のクリスタルパネル枠の位置(画像内での比率)。この枠の中にリストUIを
- * 収める形で各画面を組んでいる。
+ * 収める形で各画面を組んでいる。3枚の背景は同じ構図に見えるが、実際の枠の
+ * 位置・サイズは微妙に異なるため、モードごとに個別に計測した値を用意している。
  */
-export const DUNGEON_PANEL_FRAME = { left: 0.239, top: 0.228, width: 0.568, height: 0.461 };
+export const DUNGEON_PANEL_FRAME_TRAINING: PanelFrame = { left: 0.239, top: 0.228, width: 0.568, height: 0.461 };
+export const DUNGEON_PANEL_FRAME_STORY: PanelFrame = { left: 0.324, top: 0.308, width: 0.541, height: 0.377 };
+export const DUNGEON_PANEL_FRAME_EVENT: PanelFrame = { left: 0.281, top: 0.308, width: 0.446, height: 0.386 };
 
 /** 幅基準・上端揃え(cover未使用時)で表示した場合の、画像の実表示サイズ。 */
 export function useTopAlignedImageSize(aspectRatio: number) {
