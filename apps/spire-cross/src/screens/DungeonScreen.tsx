@@ -6,9 +6,9 @@ import DungeonStageListView from './DungeonStageListView';
 import StoryScreen from './StoryScreen';
 
 const DUNGEON_IMAGE_ASPECT_RATIO = 941 / 1672;
-const TRAINING_BG = { source: require('../../assets/backgrounds/dungeon_training_background.jpg'), aspectRatio: 941 / 1670 };
-const STORY_BG = { source: require('../../assets/backgrounds/dungeon_story_background.jpg'), aspectRatio: 941 / 836 };
-const EVENT_BG = { source: require('../../assets/backgrounds/dungeon_event_background.jpg'), aspectRatio: 941 / 836 };
+const TRAINING_BG = { source: require('../../assets/backgrounds/dungeon_training_background.jpg'), aspectRatio: 942 / 1670 };
+const STORY_BG = { source: require('../../assets/backgrounds/dungeon_story_background.jpg'), aspectRatio: 942 / 1670 };
+const EVENT_BG = { source: require('../../assets/backgrounds/dungeon_event_background.jpg'), aspectRatio: 942 / 1670 };
 
 type Mode = 'hub' | 'training' | 'story' | 'event';
 
