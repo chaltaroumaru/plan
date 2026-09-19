@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Alert, Animated, Easing, ImageBackground, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useEventListener } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useGame } from '../state/GameContext';
@@ -10,85 +9,62 @@ import { getCard } from '../data/cards';
 import { GachaPoolKind, GachaPullResult } from '../types';
 import { MULTI_PULL_COUNT, PITY_LIMIT, SINGLE_PULL_COST, TEN_PULL_COST, pullGacha } from '../game/gacha';
 
-type MultiPhase = 'idle' | 'video' | 'burst' | 'reveal';
-
-type GlowKind = 'SSR' | 'SR' | 'normal';
-
-const GLOW_COLOR: Record<GlowKind, string> = {
-  SSR: '#ffd76a',
-  SR: '#b164e8',
-  normal: '#c9b8ff',
-};
-
-const SUMMON_LABEL: Record<GlowKind, string> = {
-  SSR: '眩い想いが塔を駆け上る……!',
-  SR: '強い想いが塔を駆け上る……',
-  normal: '交界石の記憶が塔を駆け上る……',
-};
-
-function highestGlowKind(pulls: GachaPullResult[]): GlowKind {
-  if (pulls.some((p) => p.rarity === 'SSR')) return 'SSR';
-  if (pulls.some((p) => p.rarity === 'SR')) return 'SR';
-  return 'normal';
-}
+// ガチャ演出の段階。
+// video: 塔を光が駆け上り、星が飛び出して手前の魔法陣へ着地するまでの動画。
+// paused: 着地した巨大な星が画面中央で静止し、タップを待っている状態。
+// burst: (10+1連のみ)星が割れて引いた数だけレアリティ色の破片に分裂する。
+// reveal: 魔法陣の光が画面を覆って消えた後、キャラクターを1体ずつ表示する。
+type Phase = 'idle' | 'video' | 'paused' | 'burst' | 'reveal';
 
 export default function GachaScreen() {
   const { profile, updateProfile } = useGame();
   const [pool, setPool] = useState<GachaPoolKind>('character');
   const [results, setResults] = useState<GachaPullResult[] | null>(null);
-  const [summoning, setSummoning] = useState(false);
-  const [shardPulls, setShardPulls] = useState<GachaPullResult[] | null>(null);
   const [showSSRText, setShowSSRText] = useState(false);
-  const [glowKind, setGlowKind] = useState<GlowKind>('normal');
-  const [overlayHeight, setOverlayHeight] = useState(640);
-  const [overlayWidth, setOverlayWidth] = useState(360);
 
-  const climbAnim = useRef(new Animated.Value(0)).current;
-  const ssrRevealAnim = useRef(new Animated.Value(0)).current;
-  const shakeAnim = useRef(new Animated.Value(0)).current;
   const flashAnim = useRef(new Animated.Value(0)).current;
   const cardAnimsRef = useRef<Animated.Value[]>([]);
   const cardFlashRef = useRef<Animated.Value[]>([]);
-  const shardAnimsRef = useRef<Animated.Value[]>([]);
-  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ssrTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingPullsRef = useRef<GachaPullResult[] | null>(null);
+  const ssrRevealAnim = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  // 10+1連: 動画(塔→星の放出→魔法陣へ着地)の後、タップで星が11個に分裂→
-  // 白い光→1体ずつキャラクターを表示、という専用の演出フロー。
-  const [multiPhase, setMultiPhase] = useState<MultiPhase>('idle');
-  const [multiPulls, setMultiPulls] = useState<GachaPullResult[] | null>(null);
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [pulls, setPulls] = useState<GachaPullResult[] | null>(null);
   const [revealIndex, setRevealIndex] = useState(-1);
-  const [multiOverlaySize, setMultiOverlaySize] = useState({ width: 360, height: 640 });
-  const multiPullsRef = useRef<GachaPullResult[] | null>(null);
-  const multiPhaseRef = useRef<MultiPhase>('idle');
+  const [overlaySize, setOverlaySize] = useState({ width: 360, height: 640 });
+  const pullsRef = useRef<GachaPullResult[] | null>(null);
+  const phaseRef = useRef<Phase>('idle');
   const burstShardAnimsRef = useRef<Animated.Value[]>([]);
   const burstFlashAnim = useRef(new Animated.Value(0)).current;
   const cardTintAnim = useRef(new Animated.Value(0)).current;
   const revealCardAnim = useRef(new Animated.Value(0)).current;
 
-  const multiPlayer = useVideoPlayer(require('../../assets/video/gacha_multi_pull.mp4'), (player) => {
-    player.loop = false;
-    player.muted = true;
+  const player = useVideoPlayer(require('../../assets/video/gacha_multi_pull.mp4'), (p) => {
+    p.loop = false;
+    p.muted = true;
   });
 
   useEffect(() => {
-    multiPhaseRef.current = multiPhase;
-  }, [multiPhase]);
+    phaseRef.current = phase;
+  }, [phase]);
 
   // VideoView が実際にマウントされた後(このレンダーのコミット後)に
-  // 再生を開始する。setMultiPhase と同時に play() を呼ぶと、
-  // まだ View が無い状態で再生が始まり、映像が先頭フレームのまま
-  // 進まなくなることがあるため、useEffect 側で遅らせて呼び出している。
+  // 再生を開始する。setPhase と同時に play() を呼ぶと、まだ View が
+  // 無い状態で再生が始まり、映像が先頭フレームのまま進まなくなることが
+  // あるため、useEffect 側で遅らせて呼び出している。
   useEffect(() => {
-    if (multiPhase === 'video') {
-      multiPlayer.currentTime = 0;
-      multiPlayer.play();
+    if (phase === 'video') {
+      player.currentTime = 0;
+      player.play();
     }
-  }, [multiPhase, multiPlayer]);
+  }, [phase, player]);
 
-  useEventListener(multiPlayer, 'playToEnd', () => {
-    if (multiPhaseRef.current === 'video') startBurst();
+  // 動画が最後まで再生されたら、着地した星が中央で静止した状態で止める。
+  useEventListener(player, 'playToEnd', () => {
+    if (phaseRef.current === 'video') {
+      player.pause();
+      setPhase('paused');
+    }
   });
 
   const pity = pool === 'character' ? profile.charPity : profile.cardPity;
@@ -103,47 +79,68 @@ export default function GachaScreen() {
     const outcome = pullGacha(profile, pool, count);
     updateProfile(() => outcome.profile);
     setResults(null);
-    if (count === MULTI_PULL_COUNT) {
-      startMultiSummon(outcome.pulls);
-    } else {
-      startSummonSequence(outcome.pulls);
+    startSummon(outcome.pulls);
+  };
+
+  // 動画(塔→星の放出→魔法陣へ着地)を再生する。
+  // 実際の再生開始は、VideoView がマウントされた後にuseEffect側で行う。
+  const startSummon = (nextPulls: GachaPullResult[]) => {
+    pullsRef.current = nextPulls;
+    setPulls(nextPulls);
+    setRevealIndex(-1);
+    setPhase('video');
+  };
+
+  // 画面タップ: 動画再生中なら着地点まで早送りして一時停止、
+  // 一時停止中なら次のステップへ、キャラ表示中なら次のキャラへ。
+  const handleOverlayTap = () => {
+    if (phase === 'video') {
+      player.pause();
+      setPhase('paused');
+    } else if (phase === 'paused') {
+      confirmPaused();
+    } else if (phase === 'reveal') {
+      advanceReveal();
     }
   };
 
-  // 10+1連専用: 動画(塔→星の放出→魔法陣へ着地)を再生する。
-  // 実際の再生開始は、VideoView がマウントされた後にuseEffect側で行う。
-  const startMultiSummon = (pulls: GachaPullResult[]) => {
-    multiPullsRef.current = pulls;
-    setMultiPulls(pulls);
-    setRevealIndex(-1);
-    setMultiPhase('video');
+  // 静止した星をタップ: 10+1連なら割れて分裂→1連なら分裂を飛ばして
+  // そのまま魔法陣の光が画面を覆う演出へ。
+  const confirmPaused = () => {
+    const current = pullsRef.current;
+    if (!current) return;
+    if (current.length > 1) {
+      startBurst(current);
+    } else {
+      flashAndReveal(current);
+    }
   };
 
-  // 動画終了(または途中タップ)→星が割れて11個に分裂→白い光、の演出。
-  const startBurst = () => {
-    const pulls = multiPullsRef.current;
-    if (!pulls) return;
-    multiPlayer.pause();
-    setMultiPhase('burst');
+  // 星が割れて、引いた数だけレアリティ色の破片に分裂する演出。
+  const startBurst = (current: GachaPullResult[]) => {
+    setPhase('burst');
     burstFlashAnim.setValue(0);
-    burstShardAnimsRef.current = pulls.map(() => new Animated.Value(0));
+    burstShardAnimsRef.current = current.map(() => new Animated.Value(0));
     Animated.stagger(
       45,
       burstShardAnimsRef.current.map((v) =>
         Animated.timing(v, { toValue: 1, duration: 420, easing: Easing.out(Easing.quad), useNativeDriver: true })
       )
-    ).start(() => {
-      Animated.timing(burstFlashAnim, { toValue: 1, duration: 220, useNativeDriver: true }).start(() => {
-        setMultiPhase('reveal');
-        setRevealIndex(0);
-        playRevealCard(pulls, 0);
-      });
+    ).start(() => flashAndReveal(current));
+  };
+
+  // 魔法陣が光って画面全体を覆い、その光が消えてから1体目を表示する。
+  const flashAndReveal = (current: GachaPullResult[]) => {
+    Animated.timing(burstFlashAnim, { toValue: 1, duration: 220, useNativeDriver: true }).start(() => {
+      setPhase('reveal');
+      setRevealIndex(0);
+      playRevealCard(current, 0);
     });
   };
 
-  // 分裂後の光が晴れて、キャラクターを1体ずつ表示する演出。
-  const playRevealCard = (pulls: GachaPullResult[], index: number) => {
-    const pull = pulls[index];
+  // 光が晴れて、キャラクターを1体表示する演出。
+  const playRevealCard = (current: GachaPullResult[], index: number) => {
+    const pull = current[index];
     revealCardAnim.setValue(0);
     cardTintAnim.setValue(1);
     Animated.timing(burstFlashAnim, { toValue: 0, duration: 420, useNativeDriver: true }).start();
@@ -165,36 +162,45 @@ export default function GachaScreen() {
     }
   };
 
-  // タップで次のキャラへ。11体目まで見終えたら通常の結果画面(グリッド)へ。
+  // タップで次のキャラへ。最後まで見終えたら通常の結果画面(グリッド)へ。
   const advanceReveal = () => {
-    const pulls = multiPullsRef.current;
-    if (!pulls) return;
+    const current = pullsRef.current;
+    if (!current) return;
     const next = revealIndex + 1;
-    if (next >= pulls.length) {
-      setMultiPhase('idle');
-      setShowSSRText(false);
-      multiPullsRef.current = null;
-      setMultiPulls(null);
-      setRevealIndex(-1);
-      revealResults(pulls);
+    if (next >= current.length) {
+      finishSummon(current);
       return;
     }
     setRevealIndex(next);
-    playRevealCard(pulls, next);
+    playRevealCard(current, next);
   };
 
-  const revealResults = (pulls: GachaPullResult[]) => {
-    setSummoning(false);
+  const finishSummon = (finalPulls: GachaPullResult[]) => {
+    setPhase('idle');
     setShowSSRText(false);
-    setShardPulls(null);
+    pullsRef.current = null;
+    setPulls(null);
+    setRevealIndex(-1);
+    revealResults(finalPulls);
+  };
+
+  // 演出スキップ: 動画・分裂・1体ずつの表示をすべて飛ばして結果画面へ。
+  const skipToResults = () => {
+    const current = pullsRef.current;
+    player.pause();
+    if (current) finishSummon(current);
+    else setPhase('idle');
+  };
+
+  const revealResults = (finalPulls: GachaPullResult[]) => {
     flashAnim.setValue(1);
-    cardAnimsRef.current = pulls.map(() => new Animated.Value(0));
-    cardFlashRef.current = pulls.map(() => new Animated.Value(0));
-    setResults(pulls);
+    cardAnimsRef.current = finalPulls.map(() => new Animated.Value(0));
+    cardFlashRef.current = finalPulls.map(() => new Animated.Value(0));
+    setResults(finalPulls);
     Animated.timing(flashAnim, { toValue: 0, duration: 450, useNativeDriver: true }).start();
     Animated.stagger(
       90,
-      pulls.map((_, i) =>
+      finalPulls.map((_, i) =>
         Animated.parallel([
           Animated.spring(cardAnimsRef.current[i], { toValue: 1, friction: 6, useNativeDriver: true }),
           Animated.sequence([
@@ -206,70 +212,10 @@ export default function GachaScreen() {
     ).start();
   };
 
-  const startSummonSequence = (pulls: GachaPullResult[]) => {
-    const kind = highestGlowKind(pulls);
-    setGlowKind(kind);
-    setSummoning(true);
-    setShowSSRText(false);
-    setShardPulls(pulls);
-    pendingPullsRef.current = pulls;
-
-    climbAnim.setValue(0);
-    ssrRevealAnim.setValue(0);
-    shakeAnim.setValue(0);
-    shardAnimsRef.current = pulls.map(() => new Animated.Value(0));
-
-    const climbDuration = kind === 'SSR' ? 1500 : kind === 'SR' ? 1150 : 900;
-
-    // 塔が下から上へ光って駆け上る(高さ/位置を動かすのでuseNativeDriverは使えない)
-    Animated.timing(climbAnim, {
-      toValue: 1,
-      duration: climbDuration,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start(() => {
-      // 頂上に到達 → 記憶のかけらが弾け飛ぶ
-      if (kind === 'SSR') {
-        setShowSSRText(true);
-        Animated.spring(ssrRevealAnim, { toValue: 1, friction: 4, useNativeDriver: true }).start();
-        Animated.sequence([
-          Animated.timing(shakeAnim, { toValue: 1, duration: 55, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: -1, duration: 55, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: 1, duration: 55, useNativeDriver: true }),
-          Animated.timing(shakeAnim, { toValue: 0, duration: 55, useNativeDriver: true }),
-        ]).start();
-      }
-      Animated.stagger(
-        60,
-        shardAnimsRef.current.map((v) =>
-          Animated.timing(v, { toValue: 1, duration: 560, easing: Easing.out(Easing.quad), useNativeDriver: true })
-        )
-      ).start(() => {
-        revealTimerRef.current = setTimeout(() => {
-          const pending = pendingPullsRef.current;
-          pendingPullsRef.current = null;
-          if (pending) revealResults(pending);
-        }, 450);
-      });
-    });
-  };
-
-  const skipSummon = () => {
-    if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
-    if (ssrTimerRef.current) clearTimeout(ssrTimerRef.current);
-    climbAnim.stopAnimation();
-    shardAnimsRef.current.forEach((v) => v.stopAnimation());
-    const pending = pendingPullsRef.current;
-    pendingPullsRef.current = null;
-    if (pending) revealResults(pending);
-  };
-
   const switchPool = (next: GachaPoolKind) => {
     setPool(next);
     setResults(null);
   };
-
-  const glowColor = GLOW_COLOR[glowKind];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -302,14 +248,14 @@ export default function GachaScreen() {
         </View>
 
         <View style={styles.btnRow}>
-          <Pressable style={styles.pullBtn} onPress={() => doPull(1)} disabled={summoning || multiPhase !== 'idle'}>
+          <Pressable style={styles.pullBtn} onPress={() => doPull(1)} disabled={phase !== 'idle'}>
             <Text style={styles.pullBtnText}>1回引く</Text>
             <Text style={styles.pullBtnSub}>💎{SINGLE_PULL_COST}</Text>
           </Pressable>
           <Pressable
             style={[styles.pullBtn, styles.pullBtnTen]}
             onPress={() => doPull(MULTI_PULL_COUNT)}
-            disabled={summoning || multiPhase !== 'idle'}
+            disabled={phase !== 'idle'}
           >
             <Text style={styles.pullBtnText}>10+1連引く</Text>
             <Text style={styles.pullBtnSub}>💎{TEN_PULL_COST}</Text>
@@ -374,137 +320,47 @@ export default function GachaScreen() {
         )}
       </ScrollView>
 
-      {summoning && (
-        <View
-          style={styles.summonOverlay}
-          onLayout={(e) => {
-            setOverlayHeight(e.nativeEvent.layout.height);
-            setOverlayWidth(e.nativeEvent.layout.width);
-          }}
-        >
-          {/* 塔を駆け上る光の柱 */}
-          <Animated.View
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: overlayWidth / 2 - 22,
-              width: 44,
-              borderRadius: 22,
-              backgroundColor: glowColor,
-              opacity: 0.32,
-              height: climbAnim.interpolate({ inputRange: [0, 1], outputRange: [0, overlayHeight] }),
-            }}
-          />
-          {/* 光の柱の先端(駆け上る光そのもの) */}
-          <Animated.View
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              left: overlayWidth / 2 - 30,
-              bottom: climbAnim.interpolate({ inputRange: [0, 1], outputRange: [-30, overlayHeight - 30] }),
-            }}
-          >
-            <Svg width={60} height={60}>
-              <Defs>
-                <RadialGradient id="climbHead" cx="50%" cy="50%" r="50%">
-                  <Stop offset="0" stopColor="#ffffff" stopOpacity={1} />
-                  <Stop offset="0.5" stopColor={glowColor} stopOpacity={0.85} />
-                  <Stop offset="1" stopColor={glowColor} stopOpacity={0} />
-                </RadialGradient>
-              </Defs>
-              <Circle cx={30} cy={30} r={30} fill="url(#climbHead)" />
-            </Svg>
-          </Animated.View>
-
-          {/* 頂上ではじける記憶のかけら(引いた数だけ、それぞれレアリティ色) */}
-          {shardPulls?.map((p, idx) => {
-            const v = shardAnimsRef.current[idx] ?? new Animated.Value(0);
-            const isSSR = p.rarity === 'SSR';
-            const count = shardPulls.length;
-            const spread = (idx - (count - 1) / 2) * Math.min(26, (overlayWidth - 60) / Math.max(count, 1));
-            const fallDistance = 64 + (idx % 3) * 18;
-            return (
-              <Animated.View
-                key={idx}
-                testID={`shard-${idx}`}
-                pointerEvents="none"
-                style={{
-                  position: 'absolute',
-                  left: overlayWidth / 2 - 12,
-                  bottom: overlayHeight - 40,
-                  opacity: v.interpolate({ inputRange: [0, 0.12, 1], outputRange: [0, 1, 1] }),
-                  transform: [
-                    { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [0, spread] }) },
-                    { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, fallDistance] }) },
-                    {
-                      scale: v.interpolate({
-                        inputRange: [0, 0.25, 1],
-                        outputRange: [0.2, isSSR ? 1.35 : 1, isSSR ? 1.2 : 0.92],
-                      }),
-                    },
-                  ],
-                }}
-              >
-                <Text style={{ fontSize: isSSR ? 26 : 18, color: RARITY_COLOR[p.rarity] }}>◆</Text>
-              </Animated.View>
-            );
-          })}
-
-          {showSSRText && (
-            <Animated.Text
-              style={[
-                styles.ssrConfirmText,
-                {
-                  opacity: ssrRevealAnim,
-                  transform: [{ scale: ssrRevealAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }],
-                },
-              ]}
-            >
-              ✨ SSR確定 ✨
-            </Animated.Text>
-          )}
-
-          <Animated.Text
-            style={[
-              styles.summonText,
-              { color: glowColor, transform: [{ translateX: shakeAnim.interpolate({ inputRange: [-1, 1], outputRange: [-8, 8] }) }] },
-            ]}
-          >
-            {SUMMON_LABEL[glowKind]}
-          </Animated.Text>
-
-          <Pressable style={styles.skipBtn} onPress={skipSummon}>
-            <Text style={styles.skipBtnText}>タップでスキップ ▶</Text>
-          </Pressable>
-        </View>
-      )}
-
       <Animated.View
         pointerEvents="none"
-        style={[styles.flashOverlay, { opacity: flashAnim, backgroundColor: glowColor }]}
+        style={[styles.flashOverlay, { opacity: flashAnim, backgroundColor: '#ffe9a8' }]}
       />
 
-      {multiPhase !== 'idle' && (
+      {phase !== 'idle' && (
         <View
-          style={styles.multiOverlay}
-          onLayout={(e) => setMultiOverlaySize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
+          style={styles.overlay}
+          onLayout={(e) => setOverlaySize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         >
-          {multiPhase === 'video' && (
+          {(phase === 'video' || phase === 'paused' || phase === 'burst') && (
             <VideoView
-              player={multiPlayer}
-              style={{ position: 'absolute', left: 0, top: 0, width: multiOverlaySize.width, height: multiOverlaySize.height }}
+              player={player}
+              style={{ position: 'absolute', left: 0, top: 0, width: overlaySize.width, height: overlaySize.height }}
               contentFit="cover"
               nativeControls={false}
               pointerEvents="none"
             />
           )}
 
-          {multiPhase === 'burst' &&
-            multiPulls?.map((p, idx) => {
+          {phase === 'reveal' && (
+            <ImageBackground
+              source={require('../../assets/backgrounds/gacha_hall_background.jpg')}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            >
+              <View style={styles.revealDim} pointerEvents="none" />
+            </ImageBackground>
+          )}
+
+          {phase === 'paused' && (
+            <Text pointerEvents="none" style={styles.pausedHint}>
+              タップして開封 ▶
+            </Text>
+          )}
+
+          {phase === 'burst' &&
+            pulls?.map((p, idx) => {
               const v = burstShardAnimsRef.current[idx] ?? new Animated.Value(0);
               const isSSR = p.rarity === 'SSR';
-              const angle = (idx / multiPulls.length) * Math.PI * 2;
+              const angle = (idx / pulls.length) * Math.PI * 2;
               const dist = 90 + (idx % 3) * 22;
               const dx = Math.cos(angle) * dist;
               const dy = Math.sin(angle) * dist * 0.6;
@@ -514,8 +370,8 @@ export default function GachaScreen() {
                   pointerEvents="none"
                   style={{
                     position: 'absolute',
-                    left: multiOverlaySize.width / 2 - 12,
-                    top: multiOverlaySize.height * 0.72 - 12,
+                    left: overlaySize.width / 2 - 12,
+                    top: overlaySize.height * 0.72 - 12,
                     opacity: v.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 1, 0.9] }),
                     transform: [
                       { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [0, dx] }) },
@@ -534,11 +390,11 @@ export default function GachaScreen() {
               );
             })}
 
-          {multiPhase === 'reveal' &&
-            multiPulls &&
+          {phase === 'reveal' &&
+            pulls &&
             revealIndex >= 0 &&
             (() => {
-              const p = multiPulls[revealIndex];
+              const p = pulls[revealIndex];
               const emoji = p.pool === 'character' ? getCharacter(p.id)?.emoji : '🎴';
               const name = p.pool === 'character' ? getCharacter(p.id)?.name : getCard(p.id).name;
               return (
@@ -552,27 +408,36 @@ export default function GachaScreen() {
                   />
                   <Animated.View
                     style={[
-                      styles.revealCard,
-                      { borderColor: RARITY_COLOR[p.rarity] },
+                      styles.revealCardWrap,
                       {
                         opacity: revealCardAnim,
                         transform: [{ scale: revealCardAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }) }],
                       },
                     ]}
                   >
-                    <Text style={styles.revealEmoji}>{emoji}</Text>
-                    <View style={[styles.rarityBadgeLarge, { backgroundColor: RARITY_COLOR[p.rarity] }]}>
-                      <Text style={styles.rarityBadgeLargeText}>{p.rarity}</Text>
-                    </View>
-                    <Text style={styles.revealName}>{name}</Text>
-                    {p.isNew ? (
-                      <Text style={styles.newTag}>NEW!</Text>
-                    ) : (
-                      <Text style={styles.dupeTag}>{p.pool === 'character' ? '重複→ゴールド' : '所持数+1'}</Text>
-                    )}
+                    <View pointerEvents="none" style={[styles.revealGlow, { backgroundColor: RARITY_COLOR[p.rarity] }]} />
+                    <ImageBackground
+                      source={require('../../assets/ui/ornate_frame.png')}
+                      style={styles.revealFrame}
+                      imageStyle={styles.revealFrameImage}
+                      resizeMode="stretch"
+                    >
+                      <Text style={styles.revealEmoji}>{emoji}</Text>
+                      <View style={[styles.rarityBadgeLarge, { backgroundColor: RARITY_COLOR[p.rarity] }]}>
+                        <Text style={styles.rarityBadgeLargeText}>{p.rarity}</Text>
+                      </View>
+                      <Text style={styles.revealName} numberOfLines={1}>
+                        {name}
+                      </Text>
+                      {p.isNew ? (
+                        <Text style={styles.newTag}>NEW!</Text>
+                      ) : (
+                        <Text style={styles.dupeTag}>{p.pool === 'character' ? '重複→ゴールド' : '所持数+1'}</Text>
+                      )}
+                    </ImageBackground>
                   </Animated.View>
                   <Text style={styles.revealProgress}>
-                    {revealIndex + 1} / {multiPulls.length}
+                    {revealIndex + 1} / {pulls.length}
                   </Text>
                   {showSSRText && (
                     <Animated.Text
@@ -581,7 +446,10 @@ export default function GachaScreen() {
                         styles.revealSSRText,
                         {
                           opacity: ssrRevealAnim,
-                          transform: [{ scale: ssrRevealAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }],
+                          transform: [
+                            { scale: ssrRevealAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) },
+                            { translateX: shakeAnim.interpolate({ inputRange: [-1, 1], outputRange: [-8, 8] }) },
+                          ],
                         },
                       ]}
                     >
@@ -593,18 +461,13 @@ export default function GachaScreen() {
               );
             })()}
 
-          <Animated.View
-            pointerEvents="none"
-            style={[styles.multiFlashOverlay, { opacity: burstFlashAnim }]}
-          />
+          <Animated.View pointerEvents="none" style={[styles.multiFlashOverlay, { opacity: burstFlashAnim }]} />
 
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => {
-              if (multiPhase === 'video') startBurst();
-              else if (multiPhase === 'reveal') advanceReveal();
-            }}
-          />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleOverlayTap} />
+
+          <Pressable style={styles.skipBtn} onPress={skipToResults} hitSlop={10}>
+            <Text style={styles.skipBtnText}>スキップ ▶▶</Text>
+          </Pressable>
         </View>
       )}
     </SafeAreaView>
@@ -669,22 +532,6 @@ const styles = StyleSheet.create({
   resultName: { color: '#fff', fontSize: 11, fontWeight: '700', marginTop: 4 },
   newTag: { color: '#f5b400', fontSize: 10, fontWeight: '800', marginTop: 2 },
   dupeTag: { color: '#9a9ab0', fontSize: 9, marginTop: 2 },
-  summonOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(6,4,16,0.55)',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-    paddingBottom: 36,
-  },
-  ssrConfirmText: { fontSize: 22, fontWeight: '900', color: '#ffd76a', marginBottom: 6 },
-  summonText: { fontSize: 14, fontWeight: '800', marginBottom: 14, textAlign: 'center' },
-  skipBtn: { paddingVertical: 8, paddingHorizontal: 16 },
-  skipBtnText: { color: '#8a80b0', fontSize: 12, fontWeight: '700' },
   flashOverlay: {
     position: 'absolute',
     left: 0,
@@ -692,7 +539,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
-  multiOverlay: {
+  overlay: {
     position: 'absolute',
     left: 0,
     right: 0,
@@ -703,6 +550,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
+  revealDim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(6,4,16,0.45)' },
+  pausedHint: {
+    position: 'absolute',
+    bottom: '18%',
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '800',
+    backgroundColor: 'rgba(10,8,24,0.55)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    overflow: 'hidden',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowRadius: 4,
+  },
+  ssrConfirmText: { fontSize: 22, fontWeight: '900', color: '#ffd76a', marginBottom: 6 },
+  skipBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(10,8,24,0.55)',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  skipBtnText: { color: '#cfc8ea', fontSize: 12, fontWeight: '700' },
   multiFlashOverlay: {
     position: 'absolute',
     left: 0,
@@ -711,19 +584,33 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: '#ffffff',
   },
-  revealCard: {
-    width: 220,
-    borderRadius: 18,
-    borderWidth: 3,
-    backgroundColor: 'rgba(20,14,42,0.85)',
-    paddingVertical: 28,
-    paddingHorizontal: 16,
-    alignItems: 'center',
+  revealCardWrap: { alignItems: 'center', justifyContent: 'center' },
+  revealGlow: {
+    position: 'absolute',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    opacity: 0.35,
   },
-  revealEmoji: { fontSize: 56, marginBottom: 10 },
-  rarityBadgeLarge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, marginBottom: 8 },
+  revealFrame: {
+    width: 250,
+    height: 222,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  revealFrameImage: { borderRadius: 8 },
+  revealEmoji: { fontSize: 44, marginBottom: 6 },
+  rarityBadgeLarge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, marginBottom: 6 },
   rarityBadgeLargeText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  revealName: { color: '#fff', fontSize: 17, fontWeight: '800', marginBottom: 4 },
+  revealName: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 2,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowRadius: 4,
+  },
   revealProgress: { position: 'absolute', top: 24, color: '#c4c4d4', fontSize: 13, fontWeight: '700' },
   revealSSRText: { position: 'absolute', top: 70 },
   revealHint: { position: 'absolute', bottom: 40, color: '#8a80b0', fontSize: 12, fontWeight: '700' },
