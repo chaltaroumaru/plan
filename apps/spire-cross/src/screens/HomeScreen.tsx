@@ -90,31 +90,13 @@ export default function HomeScreen({ navigation }: any) {
               {ap.current}/{AP_MAX}
             </Text>
           </View>
-
-          <Pressable onPress={() => navigation.navigate('お知らせ')}>
-            <ImageBackground
-              source={require('../../assets/ui/ornate_frame.png')}
-              style={styles.frameCard}
-              imageStyle={styles.frameImage}
-              resizeMode="stretch"
-            >
-              <Text style={styles.frameEmoji}>📢</Text>
-              <Text style={styles.frameLabel}>お知らせ</Text>
-              {latestAnnouncement && (
-                <Text style={styles.framePreview} numberOfLines={1}>
-                  {latestAnnouncement.title}
-                </Text>
-              )}
-              <View style={styles.frameBadge}>
-                <Text style={styles.frameBadgeText}>{ANNOUNCEMENTS.length}</Text>
-              </View>
-            </ImageBackground>
-          </Pressable>
         </View>
       </SafeAreaView>
 
-      <View style={styles.missionFloating} pointerEvents="box-none">
-        <Pressable onPress={() => navigation.navigate('ミッション')}>
+      {/* 宙に浮かぶ掲示板のイメージ。左のミッションは宿(キャラの建物)の傾きに、
+          右のお知らせはそれと対照的な傾きに合わせて、それぞれ少し傾けている。 */}
+      <View style={styles.boardsRow} pointerEvents="box-none">
+        <Pressable style={styles.boardMission} onPress={() => navigation.navigate('ミッション')}>
           <ImageBackground
             source={require('../../assets/ui/ornate_frame.png')}
             style={styles.frameCard}
@@ -131,6 +113,26 @@ export default function HomeScreen({ navigation }: any) {
             )}
           </ImageBackground>
         </Pressable>
+
+        <Pressable style={styles.boardNews} onPress={() => navigation.navigate('お知らせ')}>
+          <ImageBackground
+            source={require('../../assets/ui/ornate_frame.png')}
+            style={styles.frameCard}
+            imageStyle={styles.frameImage}
+            resizeMode="stretch"
+          >
+            <Text style={styles.frameEmoji}>📢</Text>
+            <Text style={styles.frameLabel}>お知らせ</Text>
+            {latestAnnouncement && (
+              <Text style={styles.framePreview} numberOfLines={1}>
+                {latestAnnouncement.title}
+              </Text>
+            )}
+            <View style={styles.frameBadge}>
+              <Text style={styles.frameBadgeText}>{ANNOUNCEMENTS.length}</Text>
+            </View>
+          </ImageBackground>
+        </Pressable>
       </View>
     </View>
   );
@@ -140,30 +142,27 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   safe: { flex: 1 },
   topFrameWrap: { paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' },
-  topFrame: { height: 108, padding: 14, justifyContent: 'center' },
+  topFrame: { height: 108, paddingHorizontal: 32, paddingVertical: 12, justifyContent: 'center' },
   frameImage: { borderRadius: 8 },
-  topFrameRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  topFrameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   playerCol: { flex: 1.5 },
-  playerName: { color: '#fff', fontSize: 14, fontWeight: '800' },
-  rankText: { color: THEME.gold, fontSize: 11, fontWeight: '700', marginTop: 2, marginBottom: 4 },
-  rankExpText: { color: THEME.lavender, fontSize: 9, marginTop: 3 },
-  walletCol: { flex: 1, gap: 6 },
+  playerName: { color: '#fff', fontSize: 13, fontWeight: '800', marginBottom: 1 },
+  rankText: { color: THEME.gold, fontSize: 10, fontWeight: '700', marginTop: 1, marginBottom: 3 },
+  rankExpText: { color: THEME.lavender, fontSize: 8, marginTop: 2 },
+  walletCol: { flex: 1, gap: 5 },
   walletChip: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(10,8,24,0.55)',
     borderRadius: 16,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
     gap: 4,
   },
-  walletEmoji: { fontSize: 12 },
-  walletText: { color: '#fff', fontWeight: '700', fontSize: 11 },
+  walletEmoji: { fontSize: 11 },
+  walletText: { color: '#fff', fontWeight: '700', fontSize: 10 },
   secondRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     paddingHorizontal: 16,
     marginTop: 10,
   },
@@ -177,7 +176,16 @@ const styles = StyleSheet.create({
   },
   staminaLabel: { color: '#fff', fontSize: 12, fontWeight: '700', marginBottom: 6 },
   staminaText: { color: THEME.lavender, fontSize: 10, marginTop: 4 },
-  missionFloating: { position: 'absolute', left: 16, top: '44%' },
+  boardsRow: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    top: '44%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  boardMission: { transform: [{ rotate: '-6deg' }] },
+  boardNews: { transform: [{ rotate: '6deg' }] },
   frameCard: { width: 150, height: 133, alignItems: 'center', justifyContent: 'center', padding: 10 },
   frameEmoji: { fontSize: 18, marginBottom: 2 },
   frameLabel: {
