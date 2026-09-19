@@ -76,6 +76,17 @@ export default function GachaScreen() {
     multiPhaseRef.current = multiPhase;
   }, [multiPhase]);
 
+  // VideoView が実際にマウントされた後(このレンダーのコミット後)に
+  // 再生を開始する。setMultiPhase と同時に play() を呼ぶと、
+  // まだ View が無い状態で再生が始まり、映像が先頭フレームのまま
+  // 進まなくなることがあるため、useEffect 側で遅らせて呼び出している。
+  useEffect(() => {
+    if (multiPhase === 'video') {
+      multiPlayer.currentTime = 0;
+      multiPlayer.play();
+    }
+  }, [multiPhase, multiPlayer]);
+
   useEventListener(multiPlayer, 'playToEnd', () => {
     if (multiPhaseRef.current === 'video') startBurst();
   });
@@ -100,13 +111,12 @@ export default function GachaScreen() {
   };
 
   // 10+1連専用: 動画(塔→星の放出→魔法陣へ着地)を再生する。
+  // 実際の再生開始は、VideoView がマウントされた後にuseEffect側で行う。
   const startMultiSummon = (pulls: GachaPullResult[]) => {
     multiPullsRef.current = pulls;
     setMultiPulls(pulls);
     setRevealIndex(-1);
     setMultiPhase('video');
-    multiPlayer.currentTime = 0;
-    multiPlayer.play();
   };
 
   // 動画終了(または途中タップ)→星が割れて11個に分裂→白い光、の演出。
