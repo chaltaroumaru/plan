@@ -483,7 +483,7 @@ export default function GachaScreen() {
           {multiPhase === 'video' && (
             <VideoView
               player={multiPlayer}
-              style={StyleSheet.absoluteFill}
+              style={{ position: 'absolute', left: 0, top: 0, width: multiOverlaySize.width, height: multiOverlaySize.height }}
               contentFit="cover"
               nativeControls={false}
               pointerEvents="none"
