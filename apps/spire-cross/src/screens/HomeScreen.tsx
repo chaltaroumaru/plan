@@ -184,8 +184,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  boardMission: { transform: [{ rotate: '-6deg' }] },
-  boardNews: { transform: [{ rotate: '6deg' }] },
+  // 平面の回転(rotate)ではなく、奥行きのある向き(rotateY)で板を少し
+  // 横向きに傾け、左右それぞれの建物側へ顔を向けているような見た目にする。
+  boardMission: { transform: [{ perspective: 500 }, { rotateY: '-14deg' }] },
+  boardNews: { transform: [{ perspective: 500 }, { rotateY: '14deg' }] },
   frameCard: { width: 150, height: 133, alignItems: 'center', justifyContent: 'center', padding: 10 },
   frameEmoji: { fontSize: 18, marginBottom: 2 },
   frameLabel: {
