@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text } from 'react-native';
 
 const CIRCLE_IMAGE_ASPECT_RATIO = 1674 / 940;
 
@@ -54,6 +54,27 @@ export default function AnimatedMagicCircle({
         }}
         resizeMode="contain"
       />
+      <Text style={styles.label} pointerEvents="none">
+        ガチャへ
+      </Text>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  label: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '42%',
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '800',
+    backgroundColor: 'rgba(10,8,24,0.55)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    overflow: 'hidden',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowRadius: 4,
+  },
+});

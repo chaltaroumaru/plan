@@ -20,6 +20,7 @@ import ShopScreen from './src/screens/ShopScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import MissionScreen from './src/screens/MissionScreen';
 import NewsScreen from './src/screens/NewsScreen';
+import FriendScreen from './src/screens/FriendScreen';
 import TravelerCreateView from './src/screens/TravelerCreateView';
 
 const Tab = createBottomTabNavigator();
@@ -37,7 +38,11 @@ const theme = {
 
 const TAB_ICON: Record<string, string> = {
   ホーム: '🏠',
+  ダンジョン: '🗺️',
+  キャラ: '👥',
   ミッション: '🎯',
+  フレンド: '🧑‍🤝‍🧑',
+  ショップ: '🏪',
   設定: '⚙️',
 };
 
@@ -69,15 +74,17 @@ function AppNavigator() {
         })}
       >
         <Tab.Screen name="ホーム" component={HomeScreen} />
+        <Tab.Screen name="ダンジョン" component={DungeonScreen} />
+        <Tab.Screen name="キャラ" component={CharactersScreen} />
         <Tab.Screen name="ミッション" component={MissionScreen} />
+        <Tab.Screen name="フレンド" component={FriendScreen} />
+        <Tab.Screen name="ショップ" component={ShopScreen} />
         <Tab.Screen name="設定" component={SettingsScreen} />
-        {/* 以下はホーム画面の塔・宿・屋台・魔法陣・お知らせ枠をタップして入る場所のため、
-            下部タブバーには出さない(navigation.navigate は維持する)。 */}
-        <Tab.Screen name="ダンジョン" component={DungeonScreen} options={{ tabBarButton: () => null }} />
+        {/* 以下はホーム画面の魔法陣・ストーリーダンジョンパネル・お知らせ枠を
+            タップして入る場所のため、下部タブバーには出さない
+            (navigation.navigate は維持する)。 */}
         <Tab.Screen name="ストーリー" component={StoryScreen} options={{ tabBarButton: () => null }} />
-        <Tab.Screen name="キャラ" component={CharactersScreen} options={{ tabBarButton: () => null }} />
         <Tab.Screen name="ガチャ" component={GachaScreen} options={{ tabBarButton: () => null }} />
-        <Tab.Screen name="ショップ" component={ShopScreen} options={{ tabBarButton: () => null }} />
         <Tab.Screen name="お知らせ" component={NewsScreen} options={{ tabBarButton: () => null }} />
       </Tab.Navigator>
     </NavigationContainer>

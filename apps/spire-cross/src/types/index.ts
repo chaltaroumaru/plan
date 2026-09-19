@@ -137,6 +137,8 @@ export interface GameSettings {
 }
 
 export interface PlayerProfile {
+  playerRank: number;
+  playerExp: number;
   gold: number;
   stones: number; // 交界石
   ap: ApState;

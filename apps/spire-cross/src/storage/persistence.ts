@@ -9,6 +9,8 @@ const PROFILE_KEY = 'spire-cross/profile-v2';
 function buildDefaultProfile(): PlayerProfile {
   const starterCharacterIds = ['apprentice_warrior', 'shield_recruit'];
   const base: PlayerProfile = {
+    playerRank: 1,
+    playerExp: 0,
     gold: 300,
     stones: 300,
     ap: createInitialAp(),

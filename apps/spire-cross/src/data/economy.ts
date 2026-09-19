@@ -34,3 +34,8 @@ export const DUNGEON_CATEGORY_EMOJI: Record<DungeonCategory, string> = {
 
 export const AP_MAX = 30;
 export const AP_RECOVER_MINUTES = 3; // 1AP回復にかかる分数
+
+/** プレイヤーランクを1上げるのに必要な経験値(暫定式)。 */
+export function playerRankExpToNext(rank: number): number {
+  return rank * 100;
+}
