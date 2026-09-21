@@ -17,6 +17,15 @@ export const MAX_ENERGY = 3;
 const ULTIMATE_DAMAGE_MULT = 2.2;
 const CRIT_DAMAGE_MULT = 1.5;
 
+// カードのvalueは「対応するキャラのステータスに対する威力の倍率」の素。
+// 実際の倍率 = value / CARD_POWER_DIVISOR (例: value10 → 2.0倍)。
+// 攻撃カードはatk、スキル(ブロック)カードはdefに掛け合わせて最終値を出す。
+const CARD_POWER_DIVISOR = 5;
+
+function cardStatMultiplier(cardValue: number): number {
+  return cardValue / CARD_POWER_DIVISOR;
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -192,7 +201,7 @@ export function playCard(
   if (card.type === 'attack') {
     const target = next.enemies.find((e) => e.uid === targetEnemyUid && e.alive);
     if (!target) return state;
-    let raw = actor.atk + card.value;
+    let raw = actor.atk * cardStatMultiplier(card.value);
     if (elementMatch) raw *= 1 + actor.elementMatchBonus / 100;
     const isCrit = Math.random() * 100 < actor.critRate;
     if (isCrit) raw *= CRIT_DAMAGE_MULT;
@@ -203,7 +212,7 @@ export function playCard(
       `${characterDef?.name ?? ''}の${card.name} → ${dealt}ダメージ${isCrit ? '(クリティカル!)' : ''}`,
     ];
   } else if (card.type === 'skill') {
-    const blockGain = card.value + Math.floor(actor.def / 2);
+    const blockGain = Math.max(1, Math.round(actor.def * cardStatMultiplier(card.value)));
     next.characters = next.characters.map((c) =>
       c.uid === actor.uid ? { ...c, block: c.block + blockGain } : c
     );
