@@ -1,46 +1,28 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Pressable } from 'react-native';
-import ScreenBackground, {
-  DUNGEON_PANEL_FRAME_TRAINING,
-  DUNGEON_PANEL_FRAME_STORY,
-  DUNGEON_PANEL_FRAME_EVENT,
-} from '../components/ScreenBackground';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { THEME } from '../components/AppBackground';
 import DungeonStageListView from './DungeonStageListView';
 import StoryScreen from './StoryScreen';
 
-const DUNGEON_IMAGE_ASPECT_RATIO = 941 / 1672;
-const TRAINING_BG = {
-  source: require('../../assets/backgrounds/dungeon_training_background.jpg'),
-  aspectRatio: 942 / 1670,
-  panelFrame: DUNGEON_PANEL_FRAME_TRAINING,
-};
-const STORY_BG = {
-  source: require('../../assets/backgrounds/dungeon_story_background.jpg'),
-  aspectRatio: 942 / 1670,
-  panelFrame: DUNGEON_PANEL_FRAME_STORY,
-};
-const EVENT_BG = {
-  source: require('../../assets/backgrounds/dungeon_event_background.jpg'),
-  aspectRatio: 942 / 1670,
-  panelFrame: DUNGEON_PANEL_FRAME_EVENT,
-};
-
 type Mode = 'hub' | 'training' | 'story' | 'event';
 
-type PanelHotspot = {
-  key: string;
+type PanelDef = {
+  key: Mode;
+  emoji: string;
   label: string;
-  left: number; // 画像内でのX位置(0〜1)
-  top: number; // 画像内でのY位置(0〜1)
-  width: number;
-  height: number;
-  onPress: () => void;
+  description: string;
 };
 
+const PANELS: PanelDef[] = [
+  { key: 'training', emoji: '⚔️', label: '育成ダンジョン', description: '仲間を強くするための試練が待っている' },
+  { key: 'story', emoji: '📖', label: 'ストーリーダンジョン', description: '忘れられた記憶の欠片を辿る旅へ' },
+  { key: 'event', emoji: '✨', label: 'イベントダンジョン', description: '期間限定の特別な試練に挑戦しよう' },
+];
+
 /**
- * ホームの塔をタップしてズームインした先、塔の内部。中央に据えられた
- * 3枚のクリスタルパネル(育成/ストーリー/イベント)をタップして、
- * それぞれのダンジョンモードへ進む。
+ * ホームの塔をタップした先、塔の内部。育成/ストーリー/イベントの
+ * 3つのダンジョンモードへ進む入口。
  */
 export default function DungeonScreen() {
   const [mode, setMode] = useState<Mode>('hub');
@@ -51,77 +33,52 @@ export default function DungeonScreen() {
         title="育成ダンジョン"
         categories={['enhance', 'evolve', 'unlock', 'memory', 'raid']}
         onBack={() => setMode('hub')}
-        background={TRAINING_BG}
       />
     );
   }
   if (mode === 'event') {
     return (
-      <DungeonStageListView
-        title="イベントダンジョン"
-        categories={['event']}
-        onBack={() => setMode('hub')}
-        background={EVENT_BG}
-      />
+      <DungeonStageListView title="イベントダンジョン" categories={['event']} onBack={() => setMode('hub')} />
     );
   }
   if (mode === 'story') {
-    return <StoryScreen background={STORY_BG} onBack={() => setMode('hub')} />;
+    return <StoryScreen onBack={() => setMode('hub')} />;
   }
 
-  const panels: PanelHotspot[] = [
-    {
-      key: 'training',
-      label: '育成ダンジョン',
-      left: 0.06,
-      top: 0.375,
-      width: 0.29,
-      height: 0.295,
-      onPress: () => setMode('training'),
-    },
-    {
-      key: 'story',
-      label: 'ストーリーダンジョン',
-      left: 0.35,
-      top: 0.335,
-      width: 0.31,
-      height: 0.335,
-      onPress: () => setMode('story'),
-    },
-    {
-      key: 'event',
-      label: 'イベントダンジョン',
-      left: 0.65,
-      top: 0.375,
-      width: 0.29,
-      height: 0.295,
-      onPress: () => setMode('event'),
-    },
-  ];
-
   return (
-    <View style={styles.root}>
-      <ScreenBackground source={require('../../assets/backgrounds/dungeon_background.jpg')} aspectRatio={DUNGEON_IMAGE_ASPECT_RATIO} dim={0.12}>
-        {({ width, height }) =>
-          panels.map((p) => (
-            <Pressable
-              key={p.key}
-              onPress={p.onPress}
-              style={{
-                position: 'absolute',
-                left: width * p.left,
-                top: height * p.top,
-                width: width * p.width,
-                height: height * p.height,
-              }}
-            />
-          ))
-        }
-      </ScreenBackground>
-    </View>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.container}>
+        <Text style={styles.title}>塔の中心</Text>
+        {PANELS.map((p) => (
+          <Pressable key={p.key} style={styles.panel} onPress={() => setMode(p.key)}>
+            <Text style={styles.panelEmoji}>{p.emoji}</Text>
+            <View style={styles.panelTextCol}>
+              <Text style={styles.panelLabel}>{p.label}</Text>
+              <Text style={styles.panelDesc}>{p.description}</Text>
+            </View>
+          </Pressable>
+        ))}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  safe: { flex: 1 },
+  container: { flex: 1, padding: 16, gap: 12 },
+  title: { color: THEME.gold, fontSize: 18, fontWeight: '800', letterSpacing: 1, marginBottom: 4 },
+  panel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: 'rgba(20,14,42,0.72)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(124,92,255,0.28)',
+    padding: 16,
+  },
+  panelEmoji: { fontSize: 30 },
+  panelTextCol: { flex: 1 },
+  panelLabel: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  panelDesc: { color: THEME.lavender, fontSize: 12, marginTop: 3 },
 });

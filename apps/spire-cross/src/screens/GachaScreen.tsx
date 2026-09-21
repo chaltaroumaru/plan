@@ -1,19 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, ImageBackground, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Alert, Animated, Easing, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useEventListener } from 'expo';
-import { useVideoPlayer, VideoView } from 'expo-video';
 import { useGame } from '../state/GameContext';
 import { getCharacter, RARITY_COLOR } from '../data/characters';
 import { getCard } from '../data/cards';
 import { GachaPoolKind, GachaPullResult } from '../types';
 import { MULTI_PULL_COUNT, PITY_LIMIT, SINGLE_PULL_COST, TEN_PULL_COST, pullGacha } from '../game/gacha';
+import { THEME } from '../components/AppBackground';
 
 // ガチャ演出の段階。
-// video: 塔を光が駆け上り、星が飛び出して手前の魔法陣へ着地するまでの動画。
-// paused: 着地した巨大な星が画面中央で静止し、タップを待っている状態。
+// video: 光が駆け上り、星が浮かび上がるまでの導入(簡易演出。作り直し予定)。
+// paused: 浮かび上がった星が画面中央で静止し、タップを待っている状態。
 // burst: (10+1連のみ)星が割れて引いた数だけレアリティ色の破片に分裂する。
-// reveal: 魔法陣の光が画面を覆って消えた後、キャラクターを1体ずつ表示する。
+// reveal: 光が晴れた後、キャラクターを1体ずつ表示する。
 type Phase = 'idle' | 'video' | 'paused' | 'burst' | 'reveal';
 
 export default function GachaScreen() {
@@ -33,39 +32,27 @@ export default function GachaScreen() {
   const [revealIndex, setRevealIndex] = useState(-1);
   const [overlaySize, setOverlaySize] = useState({ width: 360, height: 640 });
   const pullsRef = useRef<GachaPullResult[] | null>(null);
-  const phaseRef = useRef<Phase>('idle');
   const burstShardAnimsRef = useRef<Animated.Value[]>([]);
   const burstFlashAnim = useRef(new Animated.Value(0)).current;
   const cardTintAnim = useRef(new Animated.Value(0)).current;
   const revealCardAnim = useRef(new Animated.Value(0)).current;
+  const riseAnim = useRef(new Animated.Value(0)).current;
+  const starAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(0)).current;
 
-  const player = useVideoPlayer(require('../../assets/video/gacha_multi_pull.mp4'), (p) => {
-    p.loop = false;
-    p.muted = true;
-  });
-
+  // 一時停止中は、浮かび上がった星がゆっくり呼吸するように明滅させる。
   useEffect(() => {
-    phaseRef.current = phase;
-  }, [phase]);
-
-  // VideoView が実際にマウントされた後(このレンダーのコミット後)に
-  // 再生を開始する。setPhase と同時に play() を呼ぶと、まだ View が
-  // 無い状態で再生が始まり、映像が先頭フレームのまま進まなくなることが
-  // あるため、useEffect 側で遅らせて呼び出している。
-  useEffect(() => {
-    if (phase === 'video') {
-      player.currentTime = 0;
-      player.play();
-    }
-  }, [phase, player]);
-
-  // 動画が最後まで再生されたら、着地した星が中央で静止した状態で止める。
-  useEventListener(player, 'playToEnd', () => {
-    if (phaseRef.current === 'video') {
-      player.pause();
-      setPhase('paused');
-    }
-  });
+    if (phase !== 'paused') return;
+    pulseAnim.setValue(0);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [phase, pulseAnim]);
 
   const pity = pool === 'character' ? profile.charPity : profile.cardPity;
   const pityRemain = Math.max(0, PITY_LIMIT - pity);
@@ -82,20 +69,34 @@ export default function GachaScreen() {
     startSummon(outcome.pulls);
   };
 
-  // 動画(塔→星の放出→魔法陣へ着地)を再生する。
-  // 実際の再生開始は、VideoView がマウントされた後にuseEffect側で行う。
+  // 導入演出(光が昇り、星が浮かび上がる)を再生してから一時停止状態へ。
   const startSummon = (nextPulls: GachaPullResult[]) => {
     pullsRef.current = nextPulls;
     setPulls(nextPulls);
     setRevealIndex(-1);
     setPhase('video');
+    riseAnim.setValue(0);
+    starAnim.setValue(0);
+    Animated.timing(riseAnim, {
+      toValue: 1,
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start(() => {
+      Animated.spring(starAnim, { toValue: 1, friction: 5, useNativeDriver: true }).start(() => {
+        setPhase('paused');
+      });
+    });
   };
 
-  // 画面タップ: 動画再生中なら着地点まで早送りして一時停止、
+  // 画面タップ: 導入演出中なら星が浮かび上がった状態まで早送り、
   // 一時停止中なら次のステップへ、キャラ表示中なら次のキャラへ。
   const handleOverlayTap = () => {
     if (phase === 'video') {
-      player.pause();
+      riseAnim.stopAnimation();
+      riseAnim.setValue(1);
+      starAnim.stopAnimation();
+      starAnim.setValue(1);
       setPhase('paused');
     } else if (phase === 'paused') {
       confirmPaused();
@@ -184,10 +185,9 @@ export default function GachaScreen() {
     revealResults(finalPulls);
   };
 
-  // 演出スキップ: 動画・分裂・1体ずつの表示をすべて飛ばして結果画面へ。
+  // 演出スキップ: 導入演出・分裂・1体ずつの表示をすべて飛ばして結果画面へ。
   const skipToResults = () => {
     const current = pullsRef.current;
-    player.pause();
     if (current) finishSummon(current);
     else setPhase('idle');
   };
@@ -330,24 +330,38 @@ export default function GachaScreen() {
           style={styles.overlay}
           onLayout={(e) => setOverlaySize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         >
-          {(phase === 'video' || phase === 'paused' || phase === 'burst') && (
-            <VideoView
-              player={player}
-              style={{ position: 'absolute', left: 0, top: 0, width: overlaySize.width, height: overlaySize.height }}
-              contentFit="cover"
-              nativeControls={false}
-              pointerEvents="none"
-            />
-          )}
-
-          {phase === 'reveal' && (
-            <ImageBackground
-              source={require('../../assets/backgrounds/gacha_hall_background.jpg')}
-              style={StyleSheet.absoluteFill}
-              resizeMode="cover"
-            >
-              <View style={styles.revealDim} pointerEvents="none" />
-            </ImageBackground>
+          {(phase === 'video' || phase === 'paused') && (
+            <>
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.riseBeam,
+                  {
+                    left: overlaySize.width / 2 - 22,
+                    height: riseAnim.interpolate({ inputRange: [0, 1], outputRange: [0, overlaySize.height * 0.55] }),
+                  },
+                ]}
+              />
+              <Animated.Text
+                pointerEvents="none"
+                style={[
+                  styles.riseStarText,
+                  {
+                    opacity: starAnim,
+                    transform: [
+                      {
+                        scale: Animated.add(
+                          starAnim,
+                          pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.12] })
+                        ),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                ✦
+              </Animated.Text>
+            </>
           )}
 
           {phase === 'paused' && (
@@ -371,7 +385,7 @@ export default function GachaScreen() {
                   style={{
                     position: 'absolute',
                     left: overlaySize.width / 2 - 12,
-                    top: overlaySize.height * 0.72 - 12,
+                    top: overlaySize.height / 2 - 12,
                     opacity: v.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 1, 0.9] }),
                     transform: [
                       { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [0, dx] }) },
@@ -416,12 +430,7 @@ export default function GachaScreen() {
                     ]}
                   >
                     <View pointerEvents="none" style={[styles.revealGlow, { backgroundColor: RARITY_COLOR[p.rarity] }]} />
-                    <ImageBackground
-                      source={require('../../assets/ui/ornate_frame.png')}
-                      style={styles.revealFrame}
-                      imageStyle={styles.revealFrameImage}
-                      resizeMode="stretch"
-                    >
+                    <View style={[styles.revealFrame, { borderColor: RARITY_COLOR[p.rarity] }]}>
                       <Text style={styles.revealEmoji}>{emoji}</Text>
                       <View style={[styles.rarityBadgeLarge, { backgroundColor: RARITY_COLOR[p.rarity] }]}>
                         <Text style={styles.rarityBadgeLargeText}>{p.rarity}</Text>
@@ -434,7 +443,7 @@ export default function GachaScreen() {
                       ) : (
                         <Text style={styles.dupeTag}>{p.pool === 'character' ? '重複→ゴールド' : '所持数+1'}</Text>
                       )}
-                    </ImageBackground>
+                    </View>
                   </Animated.View>
                   <Text style={styles.revealProgress}>
                     {revealIndex + 1} / {pulls.length}
@@ -545,12 +554,20 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: '#000',
+    backgroundColor: THEME.bgTop,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  revealDim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(6,4,16,0.45)' },
+  riseBeam: {
+    position: 'absolute',
+    bottom: 0,
+    width: 44,
+    borderRadius: 22,
+    backgroundColor: THEME.gold,
+    opacity: 0.3,
+  },
+  riseStarText: { fontSize: 64, color: THEME.gold, textShadowColor: 'rgba(255,215,106,0.6)', textShadowRadius: 18 },
   pausedHint: {
     position: 'absolute',
     bottom: '18%',
@@ -594,12 +611,15 @@ const styles = StyleSheet.create({
   },
   revealFrame: {
     width: 250,
-    height: 222,
+    minHeight: 222,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
+    paddingVertical: 24,
+    backgroundColor: 'rgba(30,20,58,0.85)',
+    borderRadius: 16,
+    borderWidth: 2,
   },
-  revealFrameImage: { borderRadius: 8 },
   revealEmoji: { fontSize: 44, marginBottom: 6 },
   rarityBadgeLarge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, marginBottom: 6 },
   rarityBadgeLargeText: { color: '#fff', fontSize: 13, fontWeight: '800' },

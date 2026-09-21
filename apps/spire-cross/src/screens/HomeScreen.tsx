@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ImageBackground, LayoutChangeEvent, StyleSheet, Text, View, Pressable, useWindowDimensions } from 'react-native';
+import { LayoutChangeEvent, StyleSheet, Text, View, Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGame } from '../state/GameContext';
 import { AP_MAX, playerRankExpToNext } from '../data/economy';
@@ -49,12 +49,7 @@ export default function HomeScreen({ navigation }: any) {
 
       <SafeAreaView style={styles.safe} edges={['top']} pointerEvents="box-none">
         <View style={styles.topFrameWrap} pointerEvents="box-none">
-          <ImageBackground
-            source={require('../../assets/ui/ornate_frame.png')}
-            style={[styles.topFrame, { width: frameWidth }]}
-            imageStyle={styles.frameImage}
-            resizeMode="stretch"
-          >
+          <View style={[styles.topFrame, { width: frameWidth }]}>
             <View style={styles.topFrameRow}>
               <View style={styles.playerCol}>
                 <Text style={styles.playerName} numberOfLines={1}>
@@ -79,7 +74,7 @@ export default function HomeScreen({ navigation }: any) {
                 </View>
               </View>
             </View>
-          </ImageBackground>
+          </View>
         </View>
 
         <View style={styles.secondRow} pointerEvents="box-none">
@@ -93,45 +88,29 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       </SafeAreaView>
 
-      {/* 宙に浮かぶ掲示板のイメージ。左のミッションは宿(キャラの建物)の傾きに、
-          右のお知らせはそれと対照的な傾きに合わせて、それぞれ少し傾けている。 */}
       <View style={styles.boardsRow} pointerEvents="box-none">
-        <Pressable style={styles.boardMission} onPress={() => navigation.navigate('ミッション')}>
-          <ImageBackground
-            source={require('../../assets/ui/ornate_frame.png')}
-            style={styles.frameCard}
-            imageStyle={styles.frameImage}
-            resizeMode="stretch"
-          >
-            <Text style={styles.frameEmoji}>📋</Text>
-            <Text style={styles.frameLabel}>ミッション</Text>
-            <Text style={styles.framePreview}>残り{missionsRemaining}件</Text>
-            {missionsRemaining > 0 && (
-              <View style={styles.frameBadge}>
-                <Text style={styles.frameBadgeText}>{missionsRemaining}</Text>
-              </View>
-            )}
-          </ImageBackground>
+        <Pressable style={styles.frameCard} onPress={() => navigation.navigate('ミッション')}>
+          <Text style={styles.frameEmoji}>📋</Text>
+          <Text style={styles.frameLabel}>ミッション</Text>
+          <Text style={styles.framePreview}>残り{missionsRemaining}件</Text>
+          {missionsRemaining > 0 && (
+            <View style={styles.frameBadge}>
+              <Text style={styles.frameBadgeText}>{missionsRemaining}</Text>
+            </View>
+          )}
         </Pressable>
 
-        <Pressable style={styles.boardNews} onPress={() => navigation.navigate('お知らせ')}>
-          <ImageBackground
-            source={require('../../assets/ui/ornate_frame.png')}
-            style={styles.frameCard}
-            imageStyle={styles.frameImage}
-            resizeMode="stretch"
-          >
-            <Text style={styles.frameEmoji}>📢</Text>
-            <Text style={styles.frameLabel}>お知らせ</Text>
-            {latestAnnouncement && (
-              <Text style={styles.framePreview} numberOfLines={1}>
-                {latestAnnouncement.title}
-              </Text>
-            )}
-            <View style={styles.frameBadge}>
-              <Text style={styles.frameBadgeText}>{ANNOUNCEMENTS.length}</Text>
-            </View>
-          </ImageBackground>
+        <Pressable style={styles.frameCard} onPress={() => navigation.navigate('お知らせ')}>
+          <Text style={styles.frameEmoji}>📢</Text>
+          <Text style={styles.frameLabel}>お知らせ</Text>
+          {latestAnnouncement && (
+            <Text style={styles.framePreview} numberOfLines={1}>
+              {latestAnnouncement.title}
+            </Text>
+          )}
+          <View style={styles.frameBadge}>
+            <Text style={styles.frameBadgeText}>{ANNOUNCEMENTS.length}</Text>
+          </View>
         </Pressable>
       </View>
     </View>
@@ -142,8 +121,16 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   safe: { flex: 1 },
   topFrameWrap: { paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' },
-  topFrame: { height: 108, paddingHorizontal: 32, paddingVertical: 12, justifyContent: 'center' },
-  frameImage: { borderRadius: 8 },
+  topFrame: {
+    height: 108,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(20,14,42,0.72)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(124,92,255,0.28)',
+  },
   topFrameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   playerCol: { flex: 1.5 },
   playerName: { color: '#fff', fontSize: 13, fontWeight: '800', marginBottom: 1 },
@@ -184,11 +171,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  // 平面の回転(rotate)ではなく、奥行きのある向き(rotateY)で板を少し
-  // 横向きに傾け、左右それぞれの建物側へ顔を向けているような見た目にする。
-  boardMission: { transform: [{ perspective: 500 }, { rotateY: '-14deg' }] },
-  boardNews: { transform: [{ perspective: 500 }, { rotateY: '14deg' }] },
-  frameCard: { width: 150, height: 133, alignItems: 'center', justifyContent: 'center', padding: 10 },
+  frameCard: {
+    width: 150,
+    height: 133,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    backgroundColor: 'rgba(20,14,42,0.72)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(124,92,255,0.28)',
+  },
   frameEmoji: { fontSize: 18, marginBottom: 2 },
   frameLabel: {
     color: '#fff',
