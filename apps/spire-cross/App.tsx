@@ -22,6 +22,7 @@ import MissionScreen from './src/screens/MissionScreen';
 import NewsScreen from './src/screens/NewsScreen';
 import FriendScreen from './src/screens/FriendScreen';
 import TravelerCreateView from './src/screens/TravelerCreateView';
+import OpeningSequenceView from './src/screens/OpeningSequenceView';
 
 const Tab = createBottomTabNavigator();
 
@@ -99,9 +100,16 @@ function AppNavigator() {
  * 必須フローとして表示し、作成が終わると自動的に通常のホーム画面へ進む。
  */
 function AppGate() {
-  const { profile, loading } = useGame();
+  const { profile, updateProfile, loading } = useGame();
   if (loading) {
     return <View style={styles.frame} />;
+  }
+  if (!profile.introCompleted) {
+    return (
+      <OpeningSequenceView
+        onDone={() => updateProfile((prev) => ({ ...prev, introCompleted: true }))}
+      />
+    );
   }
   if (!profile.traveler) {
     return <TravelerCreateView onBack={() => {}} gate />;

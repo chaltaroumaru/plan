@@ -172,8 +172,56 @@ export const CHARACTERS: CharacterDef[] = CHARACTER_SEEDS.map((seed) => {
   };
 });
 
+// 序章のクロノス戦チュートリアル専用のキャラクター。ガチャ・キャラ一覧・デッキ編成
+// など通常の CHARACTERS を参照する画面には一切出さないため、CHARACTERS配列には
+// 加えず、getCharacter() が解決できるようCHARACTER_MAPにのみ登録する。
+export const TUTORIAL_CHARACTERS: CharacterDef[] = [
+  {
+    id: 'tutorial_traveler',
+    name: 'かつての自分',
+    title: '失われた強さ',
+    rarity: 'SSR',
+    element: '光',
+    color: '#c9b8ff',
+    emoji: '⚔️',
+    baseHp: 100,
+    baseAtk: 22,
+    baseDef: 13,
+    signatureCardId: 'tutorial_traveler_atk',
+    cardIds: ['tutorial_traveler_atk', 'tutorial_traveler_skl'],
+  },
+  {
+    id: 'tutorial_aria',
+    name: 'アリア',
+    title: '最愛の人',
+    rarity: 'SSR',
+    element: '光',
+    color: '#ffd76a',
+    emoji: '✨',
+    baseHp: 90,
+    baseAtk: 20,
+    baseDef: 12,
+    signatureCardId: 'tutorial_aria_atk',
+    cardIds: ['tutorial_aria_atk', 'tutorial_aria_skl'],
+  },
+  {
+    id: 'tutorial_ally',
+    name: '仲間',
+    title: '共に戦った盟友',
+    rarity: 'SSR',
+    element: '土',
+    color: '#a68a64',
+    emoji: '🛡️',
+    baseHp: 110,
+    baseAtk: 18,
+    baseDef: 16,
+    signatureCardId: 'tutorial_ally_atk',
+    cardIds: ['tutorial_ally_atk', 'tutorial_ally_skl'],
+  },
+];
+
 export const CHARACTER_MAP: Record<string, CharacterDef> = Object.fromEntries(
-  CHARACTERS.map((c) => [c.id, c])
+  [...CHARACTERS, ...TUTORIAL_CHARACTERS].map((c) => [c.id, c])
 );
 
 // 旅人(プレイヤーが作成する主人公)は固定データではなく、プレイヤーの

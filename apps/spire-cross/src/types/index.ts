@@ -156,6 +156,10 @@ export interface PlayerProfile {
   settings: GameSettings;
   /** プレイヤー自身が作成する主人公(旅人)。未作成の場合はnull */
   traveler: TravelerBuild | null;
+  /** 序章(クロノス戦チュートリアル〜目覚め)を見終えたか。falseの間はホーム等より先にオープニングを表示する */
+  introCompleted: boolean;
+  /** ホーム画面の「草原でレベリングしよう」誘導バナーを閉じたか */
+  seenHomeGuidance: boolean;
 }
 
 export interface BattleCharacterState {

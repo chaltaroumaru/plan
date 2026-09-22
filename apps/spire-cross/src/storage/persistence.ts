@@ -34,6 +34,8 @@ function buildDefaultProfile(): PlayerProfile {
     clearedStoryStageIds: [],
     settings: { bgmOn: true, seOn: true, notifyMissionComplete: true, notifyApFull: true },
     traveler: null,
+    introCompleted: false,
+    seenHomeGuidance: false,
   };
   return { ...base, deckCardIds: buildDefaultDeck(base) };
 }
@@ -46,9 +48,13 @@ export async function loadProfile(): Promise<PlayerProfile> {
     if (!raw) return buildDefaultProfile();
     const parsed = JSON.parse(raw);
     const defaults = buildDefaultProfile();
+    // 序章(クロノス戦チュートリアル)実装前からのセーブは、すでに旅人を作成済みなら
+    // 過去に古いプロローグを見ているはずなので、新しい序章まで巻き戻さない。
+    const introCompleted = parsed.introCompleted ?? !!parsed.traveler;
     return {
       ...defaults,
       ...parsed,
+      introCompleted,
       settings: { ...defaults.settings, ...(parsed.settings ?? {}) },
       materials: { ...defaults.materials, ...(parsed.materials ?? {}) },
     };

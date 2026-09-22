@@ -14,7 +14,7 @@ import AnimatedMagicCircle from '../components/AnimatedMagicCircle';
 const FRAME_MAX_WIDTH = 480;
 
 export default function HomeScreen({ navigation }: any) {
-  const { profile } = useGame();
+  const { profile, updateProfile } = useGame();
   const ap = useMemo(() => recoverAp(profile.ap), [profile.ap]);
   const [mapWidth, setMapWidth] = useState(0);
   const { width: windowWidth } = useWindowDimensions();
@@ -86,6 +86,26 @@ export default function HomeScreen({ navigation }: any) {
             </Text>
           </View>
         </View>
+
+        {!profile.seenHomeGuidance && (
+          <Pressable
+            style={styles.guidanceBanner}
+            onPress={() => {
+              updateProfile((prev) => ({ ...prev, seenHomeGuidance: true }));
+              navigation.navigate('ダンジョン');
+            }}
+          >
+            <Text style={styles.guidanceText}>
+              まずは草原(育成ダンジョン)で戦い方を思い出そう →
+            </Text>
+            <Pressable
+              hitSlop={8}
+              onPress={() => updateProfile((prev) => ({ ...prev, seenHomeGuidance: true }))}
+            >
+              <Text style={styles.guidanceClose}>閉じる</Text>
+            </Pressable>
+          </Pressable>
+        )}
       </SafeAreaView>
 
       <View style={styles.boardsRow} pointerEvents="box-none">
@@ -163,6 +183,18 @@ const styles = StyleSheet.create({
   },
   staminaLabel: { color: '#fff', fontSize: 12, fontWeight: '700', marginBottom: 6 },
   staminaText: { color: THEME.lavender, fontSize: 10, marginTop: 4 },
+  guidanceBanner: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    backgroundColor: 'rgba(124,92,255,0.85)',
+    borderRadius: 10,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  guidanceText: { color: '#fff', fontSize: 12, fontWeight: '700', flexShrink: 1 },
+  guidanceClose: { color: '#e8e4f5', fontSize: 11, marginLeft: 8 },
   boardsRow: {
     position: 'absolute',
     left: 16,

@@ -325,8 +325,79 @@ export const CHARACTER_CARDS: CardDef[] = [
 
 export const ALL_CARDS: CardDef[] = [...BASIC_CARDS, ...CHARACTER_CARDS];
 
+// 序章のクロノス戦チュートリアル専用カード。ガチャ・デッキ編成など通常のALL_CARDSを
+// 参照する画面には出さないため、ALL_CARDSには加えずCARD_MAPにのみ登録する。
+export const TUTORIAL_CARDS: CardDef[] = [
+  {
+    id: 'tutorial_traveler_atk',
+    name: '想いの一閃',
+    type: 'attack',
+    cost: 1,
+    value: 11,
+    description: '選択した敵に11ダメージを与える。',
+    linkedCharacterId: 'tutorial_traveler',
+    element: '光',
+    rarity: 'SSR',
+  },
+  {
+    id: 'tutorial_traveler_skl',
+    name: '構え直し',
+    type: 'skill',
+    cost: 1,
+    value: 10,
+    description: '使用したキャラがブロックを獲得する。',
+    linkedCharacterId: 'tutorial_traveler',
+    element: '光',
+    rarity: 'SSR',
+  },
+  {
+    id: 'tutorial_aria_atk',
+    name: '光の矢',
+    type: 'attack',
+    cost: 1,
+    value: 10,
+    description: '選択した敵に10ダメージを与える。',
+    linkedCharacterId: 'tutorial_aria',
+    element: '光',
+    rarity: 'SSR',
+  },
+  {
+    id: 'tutorial_aria_skl',
+    name: '癒しの結界',
+    type: 'skill',
+    cost: 1,
+    value: 10,
+    description: '使用したキャラがブロックを獲得する。',
+    linkedCharacterId: 'tutorial_aria',
+    element: '光',
+    rarity: 'SSR',
+  },
+  {
+    id: 'tutorial_ally_atk',
+    name: '大盾の一撃',
+    type: 'attack',
+    cost: 1,
+    value: 9,
+    description: '選択した敵に9ダメージを与える。',
+    linkedCharacterId: 'tutorial_ally',
+    element: '土',
+    rarity: 'SSR',
+  },
+  {
+    id: 'tutorial_ally_skl',
+    name: '不動の構え',
+    type: 'skill',
+    cost: 1,
+    value: 12,
+    description: '使用したキャラがブロックを獲得する。',
+    linkedCharacterId: 'tutorial_ally',
+    element: '土',
+    rarity: 'SSR',
+  },
+];
+
 export const CARD_MAP: Record<string, CardDef> = Object.fromEntries(
-  ALL_CARDS.map((c) => [c.id, c])
+  [...ALL_CARDS, ...TUTORIAL_CARDS].map((c) => [c.id, c])
 );
 
 export function getCard(id: string): CardDef {

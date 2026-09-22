@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View, Pressable, Switch } from 'react-native';
 import { BattleCardInstance, BattlePartyState, CharacterDef, CharacterProgress, EnemyDef } from '../types';
 import { getCard } from '../data/cards';
@@ -14,6 +14,10 @@ interface Props {
   deckCardIds: string[];
   enemyDefs: EnemyDef[];
   onFinished: (result: { won: boolean }) => void;
+  /** 指定した敵のHPが割合以下になった瞬間に一度だけ呼ばれる(演出用のムービー切替等に使う) */
+  onEnemyThreshold?: { enemyId: string; ratio: number; onTrigger: () => void };
+  /** バトル開始時に表示する簡単な操作ガイド(タップで閉じる) */
+  hintText?: string;
 }
 
 const INTENT_LABEL: Record<string, string> = {
@@ -24,7 +28,15 @@ const INTENT_LABEL: Record<string, string> = {
 
 type PendingMode = 'none' | 'pick-actor' | 'pick-target' | 'pick-ultimate-target';
 
-export default function BattleView({ stageLabel, partyMembers, deckCardIds, enemyDefs, onFinished }: Props) {
+export default function BattleView({
+  stageLabel,
+  partyMembers,
+  deckCardIds,
+  enemyDefs,
+  onFinished,
+  onEnemyThreshold,
+  hintText,
+}: Props) {
   const { profile, updateProfile } = useGame();
   const enemyDefMap = Object.fromEntries(enemyDefs.map((e) => [e.id, e]));
   const [state, setState] = useState<BattlePartyState>(() =>
@@ -35,6 +47,17 @@ export default function BattleView({ stageLabel, partyMembers, deckCardIds, enem
   const [pendingUltimateActorUid, setPendingUltimateActorUid] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bottomRowWidth, setBottomRowWidth] = useState(0);
+  const [hintVisible, setHintVisible] = useState(!!hintText);
+  const thresholdFiredRef = useRef(false);
+
+  useEffect(() => {
+    if (!onEnemyThreshold || thresholdFiredRef.current) return;
+    const target = state.enemies.find((e) => e.enemyId === onEnemyThreshold.enemyId);
+    if (target && target.maxHp > 0 && target.hp / target.maxHp <= onEnemyThreshold.ratio) {
+      thresholdFiredRef.current = true;
+      onEnemyThreshold.onTrigger();
+    }
+  }, [state.enemies, onEnemyThreshold]);
 
   const PILE_WIDTH = 34;
   const ROW_GAP = 6;
@@ -115,6 +138,13 @@ export default function BattleView({ stageLabel, partyMembers, deckCardIds, enem
           </Pressable>
         </View>
       </View>
+
+      {hintVisible && hintText && (
+        <Pressable style={styles.hintBanner} onPress={() => setHintVisible(false)}>
+          <Text style={styles.hintText}>{hintText}</Text>
+          <Text style={styles.hintCloseText}>タップで閉じる</Text>
+        </Pressable>
+      )}
 
       <ScrollView contentContainerStyle={styles.enemyRow} horizontal showsHorizontalScrollIndicator={false}>
         {state.enemies.map((enemy, idx) => {
@@ -303,6 +333,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   settingsIcon: { fontSize: 16 },
+  hintBanner: {
+    backgroundColor: 'rgba(124,92,255,0.9)',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 6,
+  },
+  hintText: { color: '#fff', fontSize: 12, fontWeight: '700', lineHeight: 18 },
+  hintCloseText: { color: '#e8e4f5', fontSize: 10, marginTop: 4, textAlign: 'right' },
   enemyRow: { paddingVertical: 4, flexGrow: 1, minWidth: '100%', justifyContent: 'center' },
   enemyBox: {
     width: 100,

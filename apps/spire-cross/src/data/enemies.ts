@@ -27,8 +27,12 @@ export const BOSSES: EnemyDef[] = [
   { id: 'boss_dragon', name: '古き災厄の竜', emoji: '🐲', maxHp: 140, atk: 16, isBoss: true },
 ];
 
+// 序章のチュートリアル専用ボス。HPが40%以下になった時点で戦闘を打ち切りムービーへ
+// 切り替える前提のため、通常のダンジョン/レイドの抽選プール(BOSSES)には含めない。
+export const CHRONOS: EnemyDef = { id: 'chronos', name: 'クロノス', emoji: '⏳', maxHp: 380, atk: 22, isBoss: true };
+
 export const ENEMY_MAP: Record<string, EnemyDef> = Object.fromEntries(
-  [...ENEMIES_EARLY, ...ENEMIES_MID, ...ENEMIES_LATE, ...ELITES, ...BOSSES].map((e) => [e.id, e])
+  [...ENEMIES_EARLY, ...ENEMIES_MID, ...ENEMIES_LATE, ...ELITES, ...BOSSES, CHRONOS].map((e) => [e.id, e])
 );
 
 export function getEnemy(id: string): EnemyDef {
