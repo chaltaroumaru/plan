@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import NarrativeReader from '../components/NarrativeReader';
 import BattleView from './BattleView';
-import { TUTORIAL_CHARACTERS } from '../data/characters';
+import { TUTORIAL_CHARACTERS, getCharacter } from '../data/characters';
 import { CHRONOS } from '../data/enemies';
 import { createInitialProgress } from '../game/leveling';
 import { THEME } from '../components/AppBackground';
@@ -13,7 +13,7 @@ const INTRO_TEXT = `長い階段を昇りきった先に、その扉はあった
 
 「……ここが、最後だ」
 
-旅人は、隣に立つアリアの手を握った。柔らかく、けれど確かな力で、アリアはその手を握り返す。振り返れば、共に死線をくぐり抜けてきた仲間の顔がある。数えきれない戦いを共にした、最強のパーティ。だが今、この扉の向こうに待つものだけは、誰も本当の意味では知らなかった。
+旅人は、隣に立つアリアの手を握った。柔らかく、けれど確かな力で、アリアはその手を握り返す。振り返れば、共に死線をくぐり抜けてきた仲間の顔がある。さらにその奥、静かに佇む竜の意匠の鎧の男――終焉の竜騎士。彼の傍らにも、いつも変わらず寄り添う誰かの姿があった。数えきれない戦いを共にした、最強のパーティ。だが今、この扉の向こうに待つものだけは、誰も本当の意味では知らなかった。
 
 扉を押し開けると、広間の最奥、玉座に腰掛ける一つの影があった。
 
@@ -47,6 +47,8 @@ const DEFEAT_TEXT = `最初の数合は、悪くなかった。積み重ねて�
 
 「わたしのことは、忘れてもいいから――」
 
+同じ光の奔流は、終焉の竜騎士の傍らにいた人物をも呑み込んでいく。彼はそれに抗わなかった。ただ静かに、目を伏せたまま見送った――まるで、それだけが自分にできる、精一杯の愛し方だとでも言うように。
+
 その声を最後に、旅人の視界は白く染まり、意識が、急速に闇へ落ちていった。`;
 
 const WAKEUP_TEXT = `鳥の声で、目を覚ました。
@@ -72,7 +74,14 @@ const TUTORIAL_DECK: string[] = [
   ...Array(2).fill('tutorial_aria_skl'),
   ...Array(2).fill('tutorial_ally_atk'),
   ...Array(2).fill('tutorial_ally_skl'),
+  ...Array(2).fill('doom_dragoon_atk'),
+  ...Array(2).fill('doom_dragoon_pow'),
 ];
+
+// 終焉の竜騎士(doom_dragoon)は通常ガチャでも入手できる本編ロスターのキャラだが、
+// 序章のクロノス戦では"最強のパーティ4人目"として同じ夜に敗れる当人でもあるため、
+// 専用のTUTORIAL_CHARACTERSは作らず、CHARACTERSの実データをそのままパーティに加える
+// (STORY.md 6.13運用メモ・8章参照)。
 
 /**
  * 序章: クロノスとの決戦(チュートリアル)〜敗北〜草原での目覚めまでの、
@@ -82,10 +91,13 @@ const TUTORIAL_DECK: string[] = [
 export default function OpeningSequenceView({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState<Phase>('intro');
 
-  const tutorialParty = TUTORIAL_CHARACTERS.map((character) => ({
-    character,
-    progress: createInitialProgress(),
-  }));
+  const doomDragoon = getCharacter('doom_dragoon');
+  const tutorialParty = [...TUTORIAL_CHARACTERS, ...(doomDragoon ? [doomDragoon] : [])].map(
+    (character) => ({
+      character,
+      progress: createInitialProgress(),
+    })
+  );
 
   if (phase === 'battle') {
     return (
