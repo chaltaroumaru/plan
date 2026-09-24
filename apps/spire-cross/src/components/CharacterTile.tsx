@@ -1,7 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CharacterDef } from '../types';
 import { RARITY_COLOR } from '../data/characters';
+import { getCharacterArt } from '../data/characterArt';
 
 interface Props {
   character: CharacterDef;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function CharacterTile({ character, owned, selected, level, onPress }: Props) {
+  const art = owned ? getCharacterArt(character.id) : undefined;
   return (
     <Pressable
       onPress={onPress}
@@ -23,7 +25,11 @@ export default function CharacterTile({ character, owned, selected, level, onPre
         selected && styles.selected,
       ]}
     >
-      <Text style={styles.emoji}>{owned ? character.emoji : '❓'}</Text>
+      {art ? (
+        <Image source={art} style={styles.art} resizeMode="contain" />
+      ) : (
+        <Text style={styles.emoji}>{owned ? character.emoji : '❓'}</Text>
+      )}
       <View style={[styles.rarityBadge, { backgroundColor: RARITY_COLOR[character.rarity] }]}>
         <Text style={styles.rarityText}>{character.rarity}</Text>
       </View>
@@ -58,6 +64,11 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 32,
+    marginBottom: 4,
+  },
+  art: {
+    width: 72,
+    height: 72,
     marginBottom: 4,
   },
   rarityBadge: {

@@ -1,9 +1,10 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { CharacterDef } from '../types';
 import { useGame } from '../state/GameContext';
 import { RARITY_COLOR } from '../data/characters';
 import { getCard } from '../data/cards';
+import { getCharacterArt } from '../data/characterArt';
 import { expForNextLevel } from '../game/leveling';
 import Bar from '../components/Bar';
 
@@ -26,6 +27,7 @@ export default function CharacterDetailView({
   // 旅人(プレイヤー作成キャラ)は専用カードを持たない(signatureCardId: '')
   const signatureCard = character.signatureCardId ? getCard(character.signatureCardId) : null;
   const ownsSignatureCard = (profile.ownedCardCounts[character.signatureCardId] ?? 0) > 0;
+  const art = getCharacterArt(character.id);
 
   return (
     <ScrollView style={styles.safe} contentContainerStyle={styles.container}>
@@ -33,8 +35,10 @@ export default function CharacterDetailView({
         <Text style={styles.backLink}>← キャラ一覧に戻る</Text>
       </Pressable>
 
+      {art && <Image source={art} style={styles.artBanner} resizeMode="contain" />}
+
       <View style={styles.headerRow}>
-        <Text style={styles.emoji}>{character.emoji}</Text>
+        {!art && <Text style={styles.emoji}>{character.emoji}</Text>}
         <View style={{ flex: 1 }}>
           <View style={[styles.rarityBadge, { backgroundColor: RARITY_COLOR[character.rarity] }]}>
             <Text style={styles.rarityText}>{character.rarity}</Text>
@@ -77,6 +81,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   container: { padding: 16, paddingBottom: 48 },
   backLink: { color: '#7c5cff', fontSize: 13, marginBottom: 12 },
+  artBanner: { width: '100%', height: 240, marginBottom: 12 },
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   emoji: { fontSize: 48, marginRight: 12 },
   rarityBadge: { alignSelf: 'flex-start', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 },
